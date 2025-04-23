@@ -8,9 +8,23 @@ import logging
 from datetime import datetime, timezone
 
 # Set up Swiss Ephemeris
-# Path to ephemeris files
+# Path to ephemeris files - use the root directory where SE1 files are stored
 EPHE_PATH = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-swe.set_ephe_path(EPHE_PATH)  # Use the root directory where SE1 files are stored
+swe.set_ephe_path(EPHE_PATH)
+
+# Initialize SwissEph with the correct files
+try:
+    # Force Swiss Ephemeris to use the .se1 files for calculations
+    swe.set_ephe_path(EPHE_PATH)
+    # Use Swiss Ephemeris files instead of JPL
+    swe.SWISSEPH = True
+    # Set the sidereal mode to Krishnamurti ayanamsa (5)
+    swe.set_sid_mode(5)
+    
+    logging.info(f"Swiss Ephemeris initialized with path: {EPHE_PATH}")
+    logging.info(f"Available .se1 files: {[f for f in os.listdir(EPHE_PATH) if f.endswith('.se1')]}")
+except Exception as e:
+    logging.error(f"Failed to initialize Swiss Ephemeris: {str(e)}")
 
 def calculate_jd_ut(date_str, time_str=None):
     """Calculate Julian Day (JD) in Universal Time from date and time strings"""
