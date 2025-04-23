@@ -18,10 +18,44 @@ PLANETS = {
 }
 
 # Ayanamsa (precession correction) for sidereal calculations
-# Using Lahiri ayanamsa as a default
-# The value changes slightly each year (about 1 degree every 72 years)
-# For 1990s-2020s, it's approximately 23.85 degrees (as of 2023)
-AYANAMSA = 23.85  # Lahiri Ayanamsa for current era
+# Using Lahiri ayanamsa (Indian standard)
+# The Lahiri ayanamsa increases by approximately 50.3 seconds per year
+AYANAMSA = 23.85  # Default value (will be dynamically calculated)
+
+def calculate_lahiri_ayanamsa(date_str):
+    """
+    Calculate the Lahiri ayanamsa for a given date.
+    The Lahiri ayanamsa was approximately 23°15' on Jan 1, 1950,
+    and increases by about 50.3 seconds per year.
+    
+    Args:
+        date_str: Date string in YYYY-MM-DD format
+        
+    Returns:
+        The Lahiri ayanamsa value in degrees for the given date
+    """
+    try:
+        dt = datetime.strptime(date_str, "%Y-%m-%d")
+        
+        # Reference: Lahiri ayanamsa was 23.15 degrees on January 1, 1950
+        reference_date = datetime(1950, 1, 1)
+        reference_ayanamsa = 23.15
+        
+        # Calculate years since reference date
+        years_diff = (dt - reference_date).days / 365.25
+        
+        # Ayanamsa increases by about 50.3 seconds of arc per year
+        # Convert to degrees: 50.3 seconds = 50.3/3600 degrees
+        increase = years_diff * (50.3 / 3600)
+        
+        # Calculate current ayanamsa
+        ayanamsa = reference_ayanamsa + increase
+        
+        return ayanamsa
+    except Exception as e:
+        logging.error(f"Error calculating Lahiri ayanamsa: {str(e)}")
+        # Return the default value if calculation fails
+        return 23.85  # Default value
 
 def degrees_to_dms(degrees):
     """Convert decimal degrees to degrees, minutes, seconds format"""
@@ -114,8 +148,11 @@ def calculate_planet_positions(date_str, time_str, longitude, latitude, ephemeri
                 longitude = math.degrees(ecl.lon)
                 logging.debug(f"{planet_name} ecliptic longitude (raw): {longitude}")
                 
+                # Calculate the dynamic Lahiri ayanamsa for the birth date
+                dynamic_ayanamsa = calculate_lahiri_ayanamsa(date_str)
+                
                 # Adjust for sidereal calculation by subtracting ayanamsa
-                sidereal_longitude = (longitude - AYANAMSA) % 360
+                sidereal_longitude = (longitude - dynamic_ayanamsa) % 360
                 logging.debug(f"{planet_name} tropical: {longitude}, sidereal: {sidereal_longitude}, sign: {get_zodiac_sign(sidereal_longitude)}")
                 longitude = sidereal_longitude
                 
@@ -140,8 +177,8 @@ def calculate_planet_positions(date_str, time_str, longitude, latitude, ephemeri
                     tomorrow_longitude = math.degrees(ecl_tomorrow.lon)
                     logging.debug(f"{planet_name} tomorrow's ecliptic longitude (raw): {tomorrow_longitude}")
                     
-                    # Apply sidereal correction
-                    tomorrow_longitude = (tomorrow_longitude - AYANAMSA) % 360
+                    # Apply sidereal correction using the same dynamic ayanamsa
+                    tomorrow_longitude = (tomorrow_longitude - dynamic_ayanamsa) % 360
                     
                     logging.debug(f"{planet_name} tomorrow: {tomorrow_longitude}, today: {longitude}")
                     

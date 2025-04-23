@@ -2,7 +2,7 @@ import math
 from datetime import datetime
 import ephem
 import logging
-from utils.astronomy import AYANAMSA, degrees_to_dms, get_zodiac_sign
+from utils.astronomy import degrees_to_dms, get_zodiac_sign, calculate_lahiri_ayanamsa
 
 def calculate_houses(date_str, time_str, longitude, latitude):
     """
@@ -50,8 +50,12 @@ def calculate_houses(date_str, time_str, longitude, latitude):
         ascendant_tropical = math.degrees(sidereal_time) * 15 - 90  # Convert hours to degrees
         ascendant_tropical = ascendant_tropical % 360
         
-        # Convert to Sidereal Ascendant by applying Ayanamsa
-        ascendant_sidereal = (ascendant_tropical - AYANAMSA) % 360
+        # Calculate the Lahiri ayanamsa dynamically for the birth date
+        dynamic_ayanamsa = calculate_lahiri_ayanamsa(date_str)
+        logging.debug(f"Using Lahiri ayanamsa: {dynamic_ayanamsa} degrees for date {date_str}")
+        
+        # Convert to Sidereal Ascendant by applying the calculated Ayanamsa
+        ascendant_sidereal = (ascendant_tropical - dynamic_ayanamsa) % 360
         
         # Get the sign of the Ascendant
         ascendant_sign = get_zodiac_sign(ascendant_sidereal)
