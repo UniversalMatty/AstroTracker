@@ -310,9 +310,10 @@ def test_ascendant():
         tropical_asc_degree = tropical_asc % 30
         
         # 2. Krishnamurti calculation using direct sidereal mode
-        swe.set_sid_mode(3)  # Krishnamurti ayanamsa (value is 3)
-        houses_krishnamurti, ascmc_krishnamurti = swe.houses(jd_ut, latitude, longitude, b'P')
-        krishnamurti_asc = ascmc_krishnamurti[0]
+        # Note: The set_sid_mode doesn't seem to correctly affect the houses call
+        # So instead, we'll separately calculate the ascendant with the ayanamsa applied directly
+        second_tropical_asc = tropical_asc  # Make a copy of the tropical value
+        krishnamurti_asc = (second_tropical_asc - krishnamurti_ayanamsa) % 360
         krishnamurti_asc_sign = swe_get_zodiac_sign(krishnamurti_asc)
         krishnamurti_asc_degree = krishnamurti_asc % 30
         

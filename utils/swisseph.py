@@ -52,29 +52,41 @@ def calculate_jd_ut(date_str, time_str=None):
 def calculate_ayanamsa(jd_ut):
     """Calculate Krishnamurti ayanamsa for a given Julian Day"""
     try:
-        # Set ayanamsa to Krishnamurti (also known as KP ayanamsa)
-        # Krishnamurti ayanamsa is slightly higher than Lahiri, uses 387 CE as year of coincidence
-        swe.set_sid_mode(swe.SIDM_KRISHNAMURTI)
+        # Krishnamurti ayanamsa is defined with SE_SIDM_KRISHNAMURTI (constant value = 3)
+        # Internally it uses t0 = 2333275.5795 (= January 1, 285) and ayan_t0 = 0°,
+        # which defines the zero point where the tropical and sidereal zodiacs coincided
+        # with the precession rate of 50.288"
+        swe.set_sid_mode(3)  # Using direct constant value for SIDM_KRISHNAMURTI
         
         # Get ayanamsa value for the given date
         ayanamsa = swe.get_ayanamsa(jd_ut)
         
         # For verification, calculate ayanamsa using hardcoded values
-        # Krishnamurti ayanamsa was approximately 22.3936 on January 1, 1900
-        # It increases by approximately 50.29 arc seconds per year
+        # KP (Krishnamurti) ayanamsa is uniquely defined through a coincidence date of 
+        # 21 March 285 CE, Julian Calendar, at mean noon at Greenwich, as 0.0°
+        # Using a simplified approximation method with reference value from 1900
         year_1900_jd = 2415021.0  # JD for January 1, 1900
         jd_diff = jd_ut - year_1900_jd
         years_since_1900 = jd_diff / 365.25
-        manual_ayanamsa = 22.3936 + (years_since_1900 * 50.29 / 3600)
+        manual_ayanamsa = 22.3736 + (years_since_1900 * 50.288 / 3600)
         
-        logging.debug(f"Krishnamurti ayanamsa for JD {jd_ut}: {ayanamsa}")
-        logging.debug(f"Manual verification - Approximate Krishnamurti ayanamsa: {manual_ayanamsa}")
+        logging.debug(f"KP (Krishnamurti) ayanamsa for JD {jd_ut}: {ayanamsa}")
+        logging.debug(f"Manual approximation of KP ayanamsa: {manual_ayanamsa}")
+        
+        # In case the swe.get_ayanamsa() fails, return our manual calculation instead
+        if ayanamsa < 20 or ayanamsa > 30:  # Sanity check for reasonable values
+            logging.warning(f"Suspicious ayanamsa value from Swiss Ephemeris: {ayanamsa}. Using manual calculation.")
+            return manual_ayanamsa
         
         return ayanamsa
     except Exception as e:
         logging.error(f"Error calculating Krishnamurti ayanamsa: {str(e)}")
-        # Default Krishnamurti ayanamsa if calculation fails (approx. value for current time)
-        return 23.86
+        # Calculate dynamically based on the Julian day
+        # For current date in 2025, this is approximately 24.19°
+        year_1900_jd = 2415021.0  # JD for January 1, 1900
+        jd_diff = jd_ut - year_1900_jd
+        years_since_1900 = jd_diff / 365.25
+        return 22.3736 + (years_since_1900 * 50.288 / 3600)
 
 def calculate_houses(jd_ut, latitude, longitude, house_system=b'P'):
     """

@@ -35,27 +35,30 @@ def calculate_houses(date_str, time_str, longitude, latitude, fixed_ascendant=No
             # Use Swiss Ephemeris to calculate houses and ascendant
             # This gives both tropical and sidereal values
             try:
-                # Ensure the ayanamsa mode is set to Krishnamurti
-                swe.set_sid_mode(swe.SIDM_KRISHNAMURTI)
+                # Step 1: Calculate the tropical (Western) ascendant first 
+                # Set to tropical mode (no ayanamsa)
+                swe.set_sid_mode(0)  # 0 = tropical
                 
                 # Calculate houses and ascendant using Swiss Ephemeris with Placidus system
                 # for accurate ascendant (lagna) position
-                houses_cusps, ascmc = swe.houses(jd_ut, latitude, longitude, b'P')
+                houses_cusps_tropical, ascmc_tropical = swe.houses(jd_ut, latitude, longitude, b'P')
                 
                 # The Ascendant is the first element of ascmc (tropical)
-                ascendant_tropical = ascmc[0] 
-                logging.debug(f"Swiss Ephemeris raw ascendant (tropical): {ascendant_tropical}")
+                ascendant_tropical = ascmc_tropical[0] 
+                logging.debug(f"Swiss Ephemeris tropical ascendant: {ascendant_tropical:.4f}°")
                 
-                # For sidereal calculation, get ayanamsa value
-                ayanamsa = swe.get_ayanamsa(jd_ut)
-                logging.debug(f"Swiss Ephemeris Krishnamurti ayanamsa: {ayanamsa}")
+                # Step.2: Calculate the sidereal (Vedic) ascendant by subtracting the ayanamsa
+                # First get the Krishnamurti ayanamsa value
+                from utils.swisseph import calculate_ayanamsa
+                ayanamsa = calculate_ayanamsa(jd_ut)
+                logging.debug(f"Krishnamurti ayanamsa: {ayanamsa:.4f}°")
                 
-                # In the traditional Vedic astrology calculation, the ayanamsa is customarily subtracted
-                # from the tropical position to get the sidereal position
+                # In Vedic astrology, the ayanamsa is subtracted from tropical positions
+                # to convert them to sidereal positions
                 ascendant_sidereal = (ascendant_tropical - ayanamsa) % 360
-                logging.debug(f"Raw calculation: tropical {ascendant_tropical} - ayanamsa {ayanamsa} = sidereal {ascendant_sidereal}")
+                logging.debug(f"Conversion: tropical {ascendant_tropical:.4f}° - ayanamsa {ayanamsa:.4f}° = sidereal {ascendant_sidereal:.4f}°")
                 
-                # Get zodiac signs for detailed debugging
+                # Get zodiac signs and degrees within signs for detailed debugging
                 tropical_sign = get_zodiac_sign(ascendant_tropical)
                 sidereal_sign = get_zodiac_sign(ascendant_sidereal)
                 tropical_degree = ascendant_tropical % 30
@@ -64,12 +67,16 @@ def calculate_houses(date_str, time_str, longitude, latitude, fixed_ascendant=No
                 logging.debug(f"Tropical Ascendant: {tropical_degree:.2f}° {tropical_sign}")
                 logging.debug(f"Sidereal Ascendant: {sidereal_degree:.2f}° {sidereal_sign}")
                 
-                # Format for debugging
-                asc_sign = get_zodiac_sign(ascendant_sidereal)
-                asc_degree = ascendant_sidereal % 30
-                logging.debug(f"Sidereal Ascendant: {asc_degree:.2f}° {asc_sign}")
+                # For comparison, use direct sidereal calculation
+                swe.set_sid_mode(3)  # 3 = Krishnamurti ayanamsa
+                houses_cusps_sidereal, ascmc_sidereal = swe.houses(jd_ut, latitude, longitude, b'P')
+                direct_sidereal_asc = ascmc_sidereal[0]
+                direct_sidereal_sign = get_zodiac_sign(direct_sidereal_asc)
+                direct_sidereal_degree = direct_sidereal_asc % 30
+                logging.debug(f"Direct sidereal ascendant: {direct_sidereal_degree:.2f}° {direct_sidereal_sign}")
                 
-                logging.debug(f"Swiss Ephemeris calculated ascendant: tropical = {ascendant_tropical:.5f}° ({swe_get_zodiac_sign(ascendant_tropical)}), sidereal = {ascendant_sidereal:.5f}° ({swe_get_zodiac_sign(ascendant_sidereal)})")
+                # IMPORTANT: For accuracy, we'll use the manually calculated sidereal ascendant
+                # (tropical - ayanamsa) rather than the direct Swiss Ephemeris sidereal calculation
                 
             except Exception as swe_error:
                 # Fallback to PyEphem if Swiss Ephemeris fails
