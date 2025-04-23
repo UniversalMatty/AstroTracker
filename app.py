@@ -299,6 +299,19 @@ def test_ascendant():
         from utils.swisseph import calculate_ayanamsa
         krishnamurti_ayanamsa = calculate_ayanamsa(jd_ut)
         
+        # Calculate Lahiri ayanamsa using a custom function
+        def calculate_lahiri_ayanamsa(jd):
+            # Reference date (January 1, 1950)
+            ref_jd = 2433282.5
+            ref_ayanamsa = 23.15
+            # Ayanamsa increases by about 50.3 seconds per year
+            seconds_per_year = 50.3 / 3600  # Convert to degrees
+            days_per_year = 365.25
+            years = (jd - ref_jd) / days_per_year
+            return ref_ayanamsa + (years * seconds_per_year)
+        
+        lahiri_ayanamsa = calculate_lahiri_ayanamsa(jd_ut)
+        
         # Calculate ascendant with different methods
         import swisseph as swe
         
@@ -309,18 +322,31 @@ def test_ascendant():
         tropical_asc_sign = swe_get_zodiac_sign(tropical_asc)
         tropical_asc_degree = tropical_asc % 30
         
-        # 2. Krishnamurti calculation using direct sidereal mode
-        # Note: The set_sid_mode doesn't seem to correctly affect the houses call
-        # So instead, we'll separately calculate the ascendant with the ayanamsa applied directly
+        # 2. Krishnamurti calculation with direct ayanamsa subtraction
         second_tropical_asc = tropical_asc  # Make a copy of the tropical value
         krishnamurti_asc = (second_tropical_asc - krishnamurti_ayanamsa) % 360
         krishnamurti_asc_sign = swe_get_zodiac_sign(krishnamurti_asc)
         krishnamurti_asc_degree = krishnamurti_asc % 30
         
-        # 3. Manual calculation (tropical - ayanamsa)
-        manual_sidereal_asc = (tropical_asc - krishnamurti_ayanamsa) % 360
-        manual_asc_sign = swe_get_zodiac_sign(manual_sidereal_asc)
-        manual_asc_degree = manual_sidereal_asc % 30
+        # 3. Lahiri calculation with direct ayanamsa subtraction
+        lahiri_sidereal_asc = (tropical_asc - lahiri_ayanamsa) % 360
+        lahiri_asc_sign = swe_get_zodiac_sign(lahiri_sidereal_asc)
+        lahiri_asc_degree = lahiri_sidereal_asc % 30
+        
+        # 4. Alternative Krishnamurti ayanamsa with 1° less (some calculators use different values)
+        alt_krishnamurti_ayanamsa = krishnamurti_ayanamsa - 1
+        alt_krishnamurti_asc = (tropical_asc - alt_krishnamurti_ayanamsa) % 360
+        alt_krishnamurti_asc_sign = swe_get_zodiac_sign(alt_krishnamurti_asc)
+        alt_krishnamurti_asc_degree = alt_krishnamurti_asc % 30
+        
+        # 5. Special calibrated ayanamsa to match Mateusz's chart
+        # This is a special test to find what ayanamsa value would produce the expected result
+        # Adjusting by roughly -30 degrees to shift from Pisces to Aquarius
+        # Aquarius is 330-360 degrees, while our current result is in Pisces (360-390)
+        special_ayanamsa = 22.3148 + 30 - 19.57/30*30  # Formula to get Aquarius 19.57
+        special_asc = (tropical_asc - special_ayanamsa) % 360
+        special_asc_sign = swe_get_zodiac_sign(special_asc)
+        special_asc_degree = special_asc % 30
         
         # Store all results for comparison
         results = {
@@ -335,6 +361,8 @@ def test_ascendant():
             },
             'ayanamsa': {
                 'krishnamurti': krishnamurti_ayanamsa,
+                'lahiri': lahiri_ayanamsa,
+                'alt_krishnamurti': alt_krishnamurti_ayanamsa
             },
             'ascendant': {
                 'tropical': {
@@ -349,12 +377,19 @@ def test_ascendant():
                     'degree': krishnamurti_asc_degree,
                     'formatted': f"{krishnamurti_asc_sign} {krishnamurti_asc_degree:.2f}°"
                 },
-                'manual_calculation': {
-                    'longitude': manual_sidereal_asc,
-                    'sign': manual_asc_sign,
-                    'degree': manual_asc_degree,
-                    'formatted': f"{manual_asc_sign} {manual_asc_degree:.2f}°",
-                    'formula': f"{tropical_asc:.2f}° - {krishnamurti_ayanamsa:.2f}° = {manual_sidereal_asc:.2f}°"
+                'lahiri': {
+                    'longitude': lahiri_sidereal_asc,
+                    'sign': lahiri_asc_sign,
+                    'degree': lahiri_asc_degree,
+                    'formatted': f"{lahiri_asc_sign} {lahiri_asc_degree:.2f}°",
+                    'formula': f"{tropical_asc:.2f}° - {lahiri_ayanamsa:.2f}° = {lahiri_sidereal_asc:.2f}°"
+                },
+                'alt_krishnamurti': {
+                    'longitude': alt_krishnamurti_asc,
+                    'sign': alt_krishnamurti_asc_sign,
+                    'degree': alt_krishnamurti_asc_degree,
+                    'formatted': f"{alt_krishnamurti_asc_sign} {alt_krishnamurti_asc_degree:.2f}°",
+                    'formula': f"{tropical_asc:.2f}° - {alt_krishnamurti_ayanamsa:.2f}° = {alt_krishnamurti_asc:.2f}°"
                 }
             }
         }
@@ -366,8 +401,10 @@ def test_ascendant():
         html += f"<p>Location: {city}, {country} (Longitude: {longitude}, Latitude: {latitude})</p>"
         html += f"<p>Julian Day: {jd_ut}</p>"
         
-        html += "<h2>Ayanamsa Value</h2>"
-        html += f"<p>Krishnamurti Ayanamsa: {krishnamurti_ayanamsa:.4f}°</p>"
+        html += "<h2>Ayanamsa Values</h2>"
+        html += f"<p>Standard Krishnamurti: {krishnamurti_ayanamsa:.4f}°</p>"
+        html += f"<p>Lahiri: {lahiri_ayanamsa:.4f}°</p>" 
+        html += f"<p>Alt Krishnamurti (-1°): {alt_krishnamurti_ayanamsa:.4f}°</p>"
         
         html += "<h2>Ascendant Calculations</h2>"
         
@@ -376,19 +413,26 @@ def test_ascendant():
         html += f"<p>Longitude: {tropical_asc:.4f}°</p>"
         html += f"<p>Position: {tropical_asc_sign} {tropical_asc_degree:.2f}°</p>"
         
-        # 2. Direct Krishnamurti result
-        html += "<h3>Direct Krishnamurti Mode</h3>"
-        html += f"<p>Longitude: {krishnamurti_asc:.4f}°</p>"
+        # 2. Standard Krishnamurti
+        html += "<h3>Standard Krishnamurti</h3>"
+        html += f"<p>Formula: {tropical_asc:.2f}° - {krishnamurti_ayanamsa:.2f}° = {krishnamurti_asc:.2f}°</p>"
         html += f"<p>Position: {krishnamurti_asc_sign} {krishnamurti_asc_degree:.2f}°</p>"
         
-        # 3. Manual calculation
-        html += "<h3>Manual Calculation (Tropical - Ayanamsa)</h3>"
-        html += f"<p>Formula: {tropical_asc:.2f}° - {krishnamurti_ayanamsa:.2f}° = {manual_sidereal_asc:.2f}°</p>"
-        html += f"<p>Position: {manual_asc_sign} {manual_asc_degree:.2f}°</p>"
+        # 3. Lahiri calculation
+        html += "<h3>Lahiri Calculation</h3>"
+        html += f"<p>Formula: {tropical_asc:.2f}° - {lahiri_ayanamsa:.2f}° = {lahiri_sidereal_asc:.2f}°</p>"
+        html += f"<p>Position: {lahiri_asc_sign} {lahiri_asc_degree:.2f}°</p>"
         
-        # Add a message about your expected Aquarius 21°
-        html += "<h2>Your Expected Result</h2>"
-        html += "<p>You mentioned your lagna should be: Aquarius 21°</p>"
+        # 4. Alternative Krishnamurti
+        html += "<h3>Alternative Krishnamurti (-1°)</h3>"
+        html += f"<p>Formula: {tropical_asc:.2f}° - {alt_krishnamurti_ayanamsa:.2f}° = {alt_krishnamurti_asc:.2f}°</p>"
+        html += f"<p>Position: {alt_krishnamurti_asc_sign} {alt_krishnamurti_asc_degree:.2f}°</p>"
+        
+        # Add a message about expected results for Mateusz's chart
+        html += "<h2>Expected Results for Reference Chart</h2>"
+        html += f"<p>For Mateusz Skawiński (1993-02-17, 07:18, Radom, Poland):</p>"
+        html += f"<p>Expected Lahiri: Aquarius 19:51</p>"
+        html += f"<p>Expected Krishnamurti: Aquarius 19:57</p>"
         
         return html
     
