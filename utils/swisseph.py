@@ -53,11 +53,23 @@ def calculate_ayanamsa(jd_ut):
     """Calculate Krishnamurti ayanamsa for a given Julian Day"""
     try:
         # Set ayanamsa to Krishnamurti (also known as KP ayanamsa)
+        # Krishnamurti ayanamsa is slightly higher than Lahiri, uses 387 CE as year of coincidence
         swe.set_sid_mode(swe.SIDM_KRISHNAMURTI)
         
         # Get ayanamsa value for the given date
         ayanamsa = swe.get_ayanamsa(jd_ut)
+        
+        # For verification, calculate ayanamsa using hardcoded values
+        # Krishnamurti ayanamsa was approximately 22.3936 on January 1, 1900
+        # It increases by approximately 50.29 arc seconds per year
+        year_1900_jd = 2415021.0  # JD for January 1, 1900
+        jd_diff = jd_ut - year_1900_jd
+        years_since_1900 = jd_diff / 365.25
+        manual_ayanamsa = 22.3936 + (years_since_1900 * 50.29 / 3600)
+        
         logging.debug(f"Krishnamurti ayanamsa for JD {jd_ut}: {ayanamsa}")
+        logging.debug(f"Manual verification - Approximate Krishnamurti ayanamsa: {manual_ayanamsa}")
+        
         return ayanamsa
     except Exception as e:
         logging.error(f"Error calculating Krishnamurti ayanamsa: {str(e)}")

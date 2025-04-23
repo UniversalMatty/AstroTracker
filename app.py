@@ -273,5 +273,126 @@ def view_chart(chart_id):
         notes=chart.notes
     )
 
+@app.route('/test_ascendant')
+def test_ascendant():
+    """Test page for ascendant calculation with various methods"""
+    # Default test parameters (you can change these or add URL parameters)
+    date_str = request.args.get('date', '1990-01-15')
+    time_str = request.args.get('time', '12:00')
+    city = request.args.get('city', 'New York')
+    country = request.args.get('country', 'United States')
+    
+    try:
+        # Get coordinates
+        coordinates = get_coordinates(city, country)
+        if not coordinates:
+            flash(f"Could not determine coordinates for {city}, {country}", "danger")
+            return redirect(url_for('index'))
+        
+        longitude, latitude = coordinates
+        
+        # Get Julian Day
+        from utils.swisseph import calculate_jd_ut, get_zodiac_sign as swe_get_zodiac_sign
+        jd_ut = calculate_jd_ut(date_str, time_str)
+        
+        # Calculate ayanamsa using different methods
+        from utils.swisseph import calculate_ayanamsa
+        krishnamurti_ayanamsa = calculate_ayanamsa(jd_ut)
+        
+        # Calculate ascendant with different methods
+        import swisseph as swe
+        
+        # 1. Direct tropical calculation
+        swe.set_sid_mode(0)  # Tropical zodiac (no ayanamsa)
+        houses_tropical, ascmc_tropical = swe.houses(jd_ut, latitude, longitude, b'P')
+        tropical_asc = ascmc_tropical[0]
+        tropical_asc_sign = swe_get_zodiac_sign(tropical_asc)
+        tropical_asc_degree = tropical_asc % 30
+        
+        # 2. Krishnamurti calculation using direct sidereal mode
+        swe.set_sid_mode(3)  # Krishnamurti ayanamsa (value is 3)
+        houses_krishnamurti, ascmc_krishnamurti = swe.houses(jd_ut, latitude, longitude, b'P')
+        krishnamurti_asc = ascmc_krishnamurti[0]
+        krishnamurti_asc_sign = swe_get_zodiac_sign(krishnamurti_asc)
+        krishnamurti_asc_degree = krishnamurti_asc % 30
+        
+        # 3. Manual calculation (tropical - ayanamsa)
+        manual_sidereal_asc = (tropical_asc - krishnamurti_ayanamsa) % 360
+        manual_asc_sign = swe_get_zodiac_sign(manual_sidereal_asc)
+        manual_asc_degree = manual_sidereal_asc % 30
+        
+        # Store all results for comparison
+        results = {
+            'input': {
+                'date': date_str,
+                'time': time_str,
+                'city': city,
+                'country': country,
+                'longitude': longitude,
+                'latitude': latitude,
+                'jd_ut': jd_ut
+            },
+            'ayanamsa': {
+                'krishnamurti': krishnamurti_ayanamsa,
+            },
+            'ascendant': {
+                'tropical': {
+                    'longitude': tropical_asc,
+                    'sign': tropical_asc_sign,
+                    'degree': tropical_asc_degree,
+                    'formatted': f"{tropical_asc_sign} {tropical_asc_degree:.2f}°"
+                },
+                'krishnamurti_direct': {
+                    'longitude': krishnamurti_asc,
+                    'sign': krishnamurti_asc_sign,
+                    'degree': krishnamurti_asc_degree,
+                    'formatted': f"{krishnamurti_asc_sign} {krishnamurti_asc_degree:.2f}°"
+                },
+                'manual_calculation': {
+                    'longitude': manual_sidereal_asc,
+                    'sign': manual_asc_sign,
+                    'degree': manual_asc_degree,
+                    'formatted': f"{manual_asc_sign} {manual_asc_degree:.2f}°",
+                    'formula': f"{tropical_asc:.2f}° - {krishnamurti_ayanamsa:.2f}° = {manual_sidereal_asc:.2f}°"
+                }
+            }
+        }
+        
+        # Create a simple HTML output (we'll make a proper template later)
+        html = "<h1>Ascendant Test Results</h1>"
+        html += "<h2>Input Data</h2>"
+        html += f"<p>Date: {date_str} Time: {time_str}</p>"
+        html += f"<p>Location: {city}, {country} (Longitude: {longitude}, Latitude: {latitude})</p>"
+        html += f"<p>Julian Day: {jd_ut}</p>"
+        
+        html += "<h2>Ayanamsa Value</h2>"
+        html += f"<p>Krishnamurti Ayanamsa: {krishnamurti_ayanamsa:.4f}°</p>"
+        
+        html += "<h2>Ascendant Calculations</h2>"
+        
+        # 1. Tropical result
+        html += "<h3>Tropical (no ayanamsa)</h3>"
+        html += f"<p>Longitude: {tropical_asc:.4f}°</p>"
+        html += f"<p>Position: {tropical_asc_sign} {tropical_asc_degree:.2f}°</p>"
+        
+        # 2. Direct Krishnamurti result
+        html += "<h3>Direct Krishnamurti Mode</h3>"
+        html += f"<p>Longitude: {krishnamurti_asc:.4f}°</p>"
+        html += f"<p>Position: {krishnamurti_asc_sign} {krishnamurti_asc_degree:.2f}°</p>"
+        
+        # 3. Manual calculation
+        html += "<h3>Manual Calculation (Tropical - Ayanamsa)</h3>"
+        html += f"<p>Formula: {tropical_asc:.2f}° - {krishnamurti_ayanamsa:.2f}° = {manual_sidereal_asc:.2f}°</p>"
+        html += f"<p>Position: {manual_asc_sign} {manual_asc_degree:.2f}°</p>"
+        
+        # Add a message about your expected Aquarius 21°
+        html += "<h2>Your Expected Result</h2>"
+        html += "<p>You mentioned your lagna should be: Aquarius 21°</p>"
+        
+        return html
+    
+    except Exception as e:
+        return f"<h1>Error</h1><p>Error calculating ascendant: {str(e)}</p>"
+
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)
