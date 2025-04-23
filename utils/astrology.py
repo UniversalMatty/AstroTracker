@@ -33,8 +33,21 @@ def calculate_houses(date_str, time_str, longitude, latitude):
         
         observer.date = dt.strftime("%Y/%m/%d %H:%M:%S")
         
-        # Calculate Ascendant (Tropical)
-        ascendant_tropical = math.degrees(ephem.Equatorial(observer.last_meridian, observer.lat, observer.date).ra) - 90
+        # Calculate Ascendant
+        # Use proper method to calculate the Ascendant
+        # We need to calculate the sidereal time and the obliquity of the ecliptic
+        
+        # Get the current sidereal time
+        sidereal_time = observer.sidereal_time()
+        
+        # Calculate the Ascendant (Tropical)
+        # In astronomy, the ascendant is where the ecliptic intersects with the eastern horizon
+        # The formula: Ascendant = sidereal_time - right ascension of the sun
+        sun = ephem.Sun()
+        sun.compute(observer)
+        
+        # Calculate ascendant longitude (tropical)
+        ascendant_tropical = math.degrees(sidereal_time) * 15 - 90  # Convert hours to degrees
         ascendant_tropical = ascendant_tropical % 360
         
         # Convert to Sidereal Ascendant by applying Ayanamsa
