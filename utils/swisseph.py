@@ -18,8 +18,8 @@ try:
     swe.set_ephe_path(EPHE_PATH)
     # Use Swiss Ephemeris files instead of JPL
     swe.SWISSEPH = True
-    # Set the sidereal mode to Krishnamurti ayanamsa (5)
-    swe.set_sid_mode(5)
+    # Set the sidereal mode to Krishnamurti ayanamsa 
+    swe.set_sid_mode(swe.SIDM_KRISHNAMURTI)
     
     logging.info(f"Swiss Ephemeris initialized with path: {EPHE_PATH}")
     logging.info(f"Available .se1 files: {[f for f in os.listdir(EPHE_PATH) if f.endswith('.se1')]}")
@@ -53,8 +53,7 @@ def calculate_ayanamsa(jd_ut):
     """Calculate Krishnamurti ayanamsa for a given Julian Day"""
     try:
         # Set ayanamsa to Krishnamurti (also known as KP ayanamsa)
-        # Swiss Ephemeris constant for Krishnamurti ayanamsa is SEI_SIDM_KRISHNAMURTI = 5
-        swe.set_sid_mode(5)  # Set to Krishnamurti ayanamsa
+        swe.set_sid_mode(swe.SIDM_KRISHNAMURTI)
         
         # Get ayanamsa value for the given date
         ayanamsa = swe.get_ayanamsa(jd_ut)
@@ -65,7 +64,7 @@ def calculate_ayanamsa(jd_ut):
         # Default Krishnamurti ayanamsa if calculation fails (approx. value for current time)
         return 23.86
 
-def calculate_houses(jd_ut, latitude, longitude):
+def calculate_houses(jd_ut, latitude, longitude, house_system=b'P'):
     """
     Calculate house cusps and ascendant using Swiss Ephemeris.
     
@@ -73,6 +72,8 @@ def calculate_houses(jd_ut, latitude, longitude):
     - jd_ut: Julian Day in Universal Time
     - latitude: Geographic latitude in decimal degrees
     - longitude: Geographic longitude in decimal degrees
+    - house_system: House system to use. Default is 'P' for Placidus, which gives the most accurate ascendant.
+                    Use 'W' for whole sign houses if needed.
     
     Returns a tuple of (houses, ascmc) where:
     - houses: List of house cusps
@@ -83,11 +84,16 @@ def calculate_houses(jd_ut, latitude, longitude):
         # jd_ut: Julian day in UT
         # lat: Latitude
         # lon: Longitude
-        # hsys: House system ('W' for whole sign)
-        houses, ascmc = swe.houses(jd_ut, latitude, longitude, b'W')
+        # hsys: House system ('P' for Placidus by default, which is more accurate for the ascendant)
+        houses, ascmc = swe.houses(jd_ut, latitude, longitude, house_system)
+        
+        # The ascendant is the first element of ascmc
+        asc_degree = ascmc[0]
+        asc_sign = get_zodiac_sign(asc_degree)
+        degree_in_sign = asc_degree % 30
         
         # Log the raw values for debugging
-        logging.debug(f"Swiss Ephemeris raw ascendant: {ascmc[0]}")
+        logging.debug(f"Swiss Ephemeris ascendant: {degree_in_sign:.2f}° {asc_sign} (tropical)")
         
         return houses, ascmc
     except Exception as e:
@@ -95,7 +101,7 @@ def calculate_houses(jd_ut, latitude, longitude):
         raise
 
 def tropical_to_sidereal(longitude, jd_ut):
-    """Convert tropical longitude to sidereal using Lahiri ayanamsa"""
+    """Convert tropical longitude to sidereal using Krishnamurti ayanamsa"""
     try:
         ayanamsa = calculate_ayanamsa(jd_ut)
         sidereal_longitude = (longitude - ayanamsa) % 360
@@ -114,7 +120,7 @@ def calculate_planet_position(planet_id, jd_ut):
     
     Returns a tuple of:
     - tropical_longitude: Longitude in tropical zodiac
-    - sidereal_longitude: Longitude in sidereal zodiac (Lahiri ayanamsa)
+    - sidereal_longitude: Longitude in sidereal zodiac (Krishnamurti ayanamsa)
     - retrograde: Boolean indicating if the planet is retrograde
     """
     try:

@@ -36,25 +36,26 @@ def calculate_houses(date_str, time_str, longitude, latitude, fixed_ascendant=No
             # This gives both tropical and sidereal values
             try:
                 # Ensure the ayanamsa mode is set to Krishnamurti
-                swe.set_sid_mode(5)  # 5 is the constant for Krishnamurti ayanamsa
+                swe.set_sid_mode(swe.SIDM_KRISHNAMURTI)
                 
-                # Calculate Krishnamurti ayanamsa for this date
+                # Calculate houses and ascendant using Swiss Ephemeris
+                houses_cusps, ascmc = swe.houses(jd_ut, latitude, longitude, b'P')
+                
+                # The Ascendant is the first element of ascmc
+                ascendant_tropical = ascmc[0] 
+                logging.debug(f"Swiss Ephemeris raw ascendant (tropical): {ascendant_tropical}")
+                
+                # For sidereal calculation, we're already in Krishnamurti mode, so we can get ayanamsa
                 ayanamsa = swe.get_ayanamsa(jd_ut)
                 logging.debug(f"Swiss Ephemeris Krishnamurti ayanamsa: {ayanamsa}")
                 
-                # Force using Swiss Ephemeris files (.se1) for calculation
-                # Use 'P' for Placidus house system first to get accurate ascendant
-                houses_cusps, ascmc = swe.houses(jd_ut, latitude, longitude, b'P')
-                
-                # Get tropical ascendant from ascmc[0]
-                ascendant_tropical = ascmc[0]
-                logging.debug(f"Swiss Ephemeris raw ascendant (tropical): {ascendant_tropical}")
-                
-                # Calculate sidereal ascendant using Krishnamurti ayanamsa
+                # Get sidereal ascendant by subtracting ayanamsa
                 ascendant_sidereal = (ascendant_tropical - ayanamsa) % 360
                 
-                # Get true sidereal position
-                logging.debug(f"Sidereal Ascendant (Krishnamurti): {ascendant_sidereal}")
+                # Format for debugging
+                asc_sign = get_zodiac_sign(ascendant_sidereal)
+                asc_degree = ascendant_sidereal % 30
+                logging.debug(f"Sidereal Ascendant: {asc_degree:.2f}° {asc_sign}")
                 
                 logging.debug(f"Swiss Ephemeris calculated ascendant: tropical = {ascendant_tropical:.5f}° ({swe_get_zodiac_sign(ascendant_tropical)}), sidereal = {ascendant_sidereal:.5f}° ({swe_get_zodiac_sign(ascendant_sidereal)})")
                 
