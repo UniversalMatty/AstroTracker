@@ -1,4 +1,24 @@
-[packages]
-flask = "*"
-pyswisseph = "*"
-geopy = "*"
+[project]
+name = "astro-api"
+version = "0.1.0"
+description = "Astrological data calculator using sidereal calculations and whole sign system"
+readme = "README.md"
+requires-python = ">=3.8"
+dependencies = [
+    "flask>=3.0.3",
+    "gunicorn>=23.0.0",
+    "pyephem>=9.99",
+    "requests>=2.32.3",
+    "werkzeug>=3.0.6",
+]
+
+[tool.setuptools]
+packages = []
+
+[tool.pip]
+dependencies = [
+    "flask",
+    "pyephem",
+    "requests",
+    "gunicorn",
+]

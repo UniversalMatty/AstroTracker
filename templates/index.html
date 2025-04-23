@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Astrological Calculator - Sidereal Whole Sign System</title>
+    
+    <!-- Bootstrap CSS -->
+    <link rel="stylesheet" href="https://cdn.replit.com/agent/bootstrap-agent-dark-theme.min.css">
+    
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/custom.css') }}">
+    
+    <!-- Font Awesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+</head>
+<body>
+    <div class="container">
+        <header class="text-center my-4">
+            <h1><i class="fas fa-moon me-2"></i> Sidereal Astrological Calculator</h1>
+            <p class="lead">Generate accurate planetary positions and house cusps based on birth details using sidereal calculations and the whole sign system</p>
+        </header>
+        
+        <!-- Alert messages -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                <div class="alert-container">
+                    {% for category, message in messages %}
+                        <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                            {{ message }}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        {% endwith %}
+        
+        <div class="row">
+            <div class="col-lg-8 offset-lg-2">
+                <div class="card mb-4">
+                    <div class="card-header bg-primary text-white">
+                        <h3 class="mb-0">Birth Details</h3>
+                    </div>
+                    <div class="card-body">
+                        <form id="birth-details-form" action="{{ url_for('calculate') }}" method="post" enctype="multipart/form-data">
+                            <!-- Personal Information -->
+                            <div class="form-section">
+                                <h4 class="mb-3">Personal Information</h4>
+                                <div class="mb-3">
+                                    <label for="name" class="form-label">Name (optional)</label>
+                                    <input type="text" class="form-control" id="name" name="name" placeholder="Your name">
+                                </div>
+                                
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        <label for="dob_date" class="form-label">Date of Birth <span class="text-danger">*</span></label>
+                                        <input type="date" class="form-control" id="dob_date" name="dob_date" required>
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label for="dob_time" class="form-label">Time of Birth (if known)</label>
+                                        <input type="time" class="form-control" id="dob_time" name="dob_time">
+                                        <small class="form-text text-muted">For accurate house calculations</small>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Birth Location -->
+                            <div class="form-section">
+                                <h4 class="mb-3">Birth Location</h4>
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        <label for="country" class="form-label">Country <span class="text-danger">*</span></label>
+                                        <input type="text" class="form-control" id="country" name="country" placeholder="Country of birth" required>
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label for="city" class="form-label">City <span class="text-danger">*</span></label>
+                                        <input type="text" class="form-control" id="city" name="city" placeholder="City of birth" required>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Advanced Options -->
+                            <div class="form-section">
+                                <h4 class="mb-3">Advanced Options</h4>
+                                <div class="mb-3">
+                                    <label for="ephemerides_file" class="form-label">Upload Ephemerides Data (optional)</label>
+                                    <div class="input-group">
+                                        <input type="file" class="form-control" id="ephemerides_file" name="ephemerides_file" accept=".json,.csv,.txt">
+                                        <label class="input-group-text" for="ephemerides_file">Choose file</label>
+                                    </div>
+                                    <small class="form-text text-muted">Upload custom ephemerides data in JSON, CSV, or TXT format</small>
+                                </div>
+                            </div>
+                            
+                            <div class="d-grid gap-2">
+                                <button type="submit" class="btn btn-primary btn-lg">
+                                    <i class="fas fa-calculator me-2"></i> Calculate Astrological Data
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+                
+                <!-- Information Card -->
+                <div class="card">
+                    <div class="card-header bg-secondary text-white">
+                        <h3 class="mb-0">About This Calculator</h3>
+                    </div>
+                    <div class="card-body">
+                        <h5 class="card-title">Sidereal Whole Sign System</h5>
+                        <p class="card-text">
+                            This calculator uses the <strong>sidereal zodiac</strong> for planet positions, which accounts for the precession of the equinoxes and provides more astronomically accurate positions compared to the tropical system.
+                        </p>
+                        <p class="card-text">
+                            For house calculations, we use the <strong>whole sign system</strong>, one of the oldest house systems where each house corresponds to a full sign of the zodiac, starting with the rising sign (ascendant) as the 1st house.
+                        </p>
+                        <h5 class="card-title mt-4">Features</h5>
+                        <ul>
+                            <li>Accurate planetary positions with optional retrograde status</li>
+                            <li>Nakshatra (lunar mansion) positions for each planet</li>
+                            <li>Whole sign house cusps with interpretations</li>
+                            <li>Support for custom ephemerides data</li>
+                            <li>Visual chart representation</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <footer class="text-center my-4">
+            <p class="text-muted">
+                <small>
+                    Astrological Calculator &copy; 2023 | 
+                    Using sidereal calculations and whole sign system
+                </small>
+            </p>
+        </footer>
+    </div>
+    
+    <!-- Bootstrap JS Bundle with Popper -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- Custom Scripts -->
+    <script src="{{ url_for('static', filename='js/script.js') }}"></script>
+</body>
+</html>

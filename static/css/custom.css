@@ -1,0 +1,131 @@
+/* Custom styles for the astrological calculator */
+
+/* General styling overrides */
+body {
+    padding-top: 20px;
+    padding-bottom: 40px;
+}
+
+.container {
+    max-width: 960px;
+}
+
+/* Form styling */
+.form-section {
+    margin-bottom: 2rem;
+}
+
+.form-group label {
+    font-weight: 500;
+}
+
+/* Results page styling */
+.birth-info {
+    background-color: rgba(0, 0, 0, 0.1);
+    border-radius: 0.5rem;
+    padding: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.planet-table th,
+.house-table th {
+    background-color: var(--bs-gray-800);
+}
+
+/* Planet badges */
+.planet-badge {
+    display: inline-block;
+    padding: 0.25rem 0.5rem;
+    border-radius: 0.25rem;
+    margin-right: 0.5rem;
+    font-weight: 500;
+}
+
+/* Retrograde indicator */
+.retrograde {
+    color: #FF6B6B;
+    font-style: italic;
+}
+
+.retrograde::after {
+    content: " ℞";
+    font-weight: bold;
+}
+
+/* Chart container */
+.chart-container {
+    position: relative;
+    height: 400px;
+    width: 100%;
+    margin: 2rem auto;
+}
+
+#planet-chart {
+    background-color: rgba(0, 0, 0, 0.2);
+    border-radius: 50%;
+}
+
+/* Nakshatra styling */
+.nakshatra-info {
+    font-size: 0.85rem;
+    color: var(--bs-gray-400);
+}
+
+/* House card styling */
+.house-card {
+    height: 100%;
+    transition: transform 0.2s;
+}
+
+.house-card:hover {
+    transform: translateY(-5px);
+}
+
+.house-card .card-header {
+    font-weight: bold;
+}
+
+/* File upload styling */
+.custom-file-label {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* Flash messages */
+.alert-container {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 1050;
+    max-width: 300px;
+}
+
+/* Zodiac sign colors */
+.sign-aries { color: #FF5733; }
+.sign-taurus { color: #8B4513; }
+.sign-gemini { color: #FFFF00; }
+.sign-cancer { color: #87CEEB; }
+.sign-leo { color: #FFA500; }
+.sign-virgo { color: #90EE90; }
+.sign-libra { color: #FF69B4; }
+.sign-scorpio { color: #800000; }
+.sign-sagittarius { color: #0000FF; }
+.sign-capricorn { color: #A52A2A; }
+.sign-aquarius { color: #00FFFF; }
+.sign-pisces { color: #9370DB; }
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .chart-container {
+        height: 300px;
+    }
+    
+    .house-grid {
+        display: block !important;
+    }
+    
+    .house-grid .col-md-4 {
+        margin-bottom: 1rem;
+    }
+}
