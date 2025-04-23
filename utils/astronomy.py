@@ -82,7 +82,7 @@ def format_longitude(longitude):
     d, m, s = degrees_to_dms(pos_in_sign)
     return f"{sign} {d}° {m}' {int(s)}\""
 
-def calculate_planet_positions(date_str, time_str, longitude, latitude, ephemerides_data=None):
+def calculate_planet_positions(date_str, time_str, longitude, latitude, ephemerides_data=None, use_calibration=False):
     """
     Calculate planetary positions for a given date, time, and location.
     Uses sidereal calculations for accurate astrological readings.
@@ -93,6 +93,7 @@ def calculate_planet_positions(date_str, time_str, longitude, latitude, ephemeri
     - longitude: Geographic longitude in decimal degrees
     - latitude: Geographic latitude in decimal degrees
     - ephemerides_data: Optional ephemerides data to use instead of PyEphem calculations
+    - use_calibration: Whether to use a special calibration to match reference charts
     
     Returns a list of dictionaries with planetary data
     """
