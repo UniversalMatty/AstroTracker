@@ -68,8 +68,15 @@ def calculate():
         longitude, latitude = coordinates
         planets = calculate_planet_positions(dob_date, dob_time, longitude, latitude)
         
-        # Calculate houses and get ascendant
-        houses = calculate_houses(dob_date, dob_time, longitude, latitude)
+        # Check if calibration mode is requested
+        use_calibration = request.form.get('use_calibration') == 'on'
+        
+        # Calculate houses and get ascendant (with optional calibration)
+        houses = calculate_houses(dob_date, dob_time, longitude, latitude, use_calibration=use_calibration)
+        
+        # Log whether calibration was used
+        if use_calibration:
+            logging.info(f"Using special calibration for chart calculation. Birth date: {dob_date}")
         
         # Get the ascendant from the first house (with exact degree)
         ascendant_sign = houses[0]['sign']
@@ -220,13 +227,21 @@ def view_chart(chart_id):
         
         planets.append(planet)
     
+    # Get calibration setting from query parameters, defaulting to off
+    use_calibration = request.args.get('use_calibration') == 'true'
+    
     # Calculate houses dynamically based on birth time and location
     houses = calculate_houses(
         chart.birth_date.strftime('%Y-%m-%d'),
         chart.birth_time.strftime('%H:%M') if chart.birth_time else None,
         chart.longitude,
-        chart.latitude
+        chart.latitude,
+        use_calibration=use_calibration
     )
+    
+    # Log whether calibration was used
+    if use_calibration:
+        logging.info(f"Using special calibration for saved chart ID {chart_id}")
     
     # Get the ascendant from the first house (with exact degree)
     ascendant_sign = houses[0]['sign']
