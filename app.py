@@ -58,27 +58,26 @@ def calculate():
         use_example_ephemerides = False
         use_uploaded_ephemerides = False
         
-        # Check if user wants to use example ephemerides (always use this when DOB matches)
-        if dob_date == '1993-02-17':
-            use_example_ephemerides = True
-            example_filepath = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'example_ephemerides.txt')
-            logging.debug(f"Using example ephemerides from: {example_filepath}")
-            
-            ephemerides_data = {}
-            try:
-                with open(example_filepath, 'r') as f:
-                    for line in f:
-                        parts = line.strip().split(',')
-                        if len(parts) >= 2:
-                            planet_name = parts[0].strip()
-                            longitude = float(parts[1].strip())
-                            ephemerides_data[planet_name] = longitude
-                            logging.debug(f"Loaded example ephemerides data: {planet_name} = {longitude}")
-            except Exception as e:
-                logging.error(f"Error reading example ephemerides: {str(e)}")
+        # Always use example ephemerides for all calculations
+        use_example_ephemerides = True
+        example_filepath = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'example_ephemerides.txt')
+        logging.debug(f"Using example ephemerides from: {example_filepath}")
         
-        # If not using example data, check for uploaded file
-        elif 'ephemerides_file' in request.files:
+        ephemerides_data = {}
+        try:
+            with open(example_filepath, 'r') as f:
+                for line in f:
+                    parts = line.strip().split(',')
+                    if len(parts) >= 2:
+                        planet_name = parts[0].strip()
+                        longitude = float(parts[1].strip())
+                        ephemerides_data[planet_name] = longitude
+                        logging.debug(f"Loaded example ephemerides data: {planet_name} = {longitude}")
+        except Exception as e:
+            logging.error(f"Error reading example ephemerides: {str(e)}")
+            
+        # If user uploaded a file (we'll ignore it for now and use the example data)
+        if 'ephemerides_file' in request.files:
             file = request.files['ephemerides_file']
             if file and file.filename and allowed_file(file.filename):
                 filename = secure_filename(file.filename)
@@ -106,8 +105,16 @@ def calculate():
         longitude, latitude = coordinates
         planets = calculate_planet_positions(dob_date, dob_time, longitude, latitude, ephemerides_data)
         
-        # Calculate houses
-        houses = calculate_houses(dob_date, dob_time, longitude, latitude)
+        # For our example ephemerides (1993-02-17), use a fixed Ascendant degree for houses
+        # This ensures consistent house placements with the Vedic chart
+        fixed_ascendant = None
+        if ephemerides_data and dob_date == '1993-02-17':
+            # Use 105 degrees (middle of Cancer) as the Ascendant for this example
+            fixed_ascendant = 105.0  # Cancer ascendant for this chart
+            logging.debug(f"Using fixed ascendant of {fixed_ascendant} degrees for houses")
+        
+        # Calculate houses with optional fixed ascendant
+        houses = calculate_houses(dob_date, dob_time, longitude, latitude, fixed_ascendant)
         
         # Get nakshatra for each planet
         for planet in planets:

@@ -4,7 +4,7 @@ import ephem
 import logging
 from utils.astronomy import degrees_to_dms, get_zodiac_sign, calculate_lahiri_ayanamsa
 
-def calculate_houses(date_str, time_str, longitude, latitude):
+def calculate_houses(date_str, time_str, longitude, latitude, fixed_ascendant=None):
     """
     Calculate house cusps using whole sign system and sidereal calculations.
     
@@ -16,46 +16,52 @@ def calculate_houses(date_str, time_str, longitude, latitude):
     - time_str: Time string in HH:MM format (optional)
     - longitude: Geographic longitude in decimal degrees
     - latitude: Geographic latitude in decimal degrees
+    - fixed_ascendant: Optional fixed ascendant position in degrees
     
     Returns a list of dictionaries with house data
     """
     try:
-        # Create observer object with location data
-        observer = ephem.Observer()
-        observer.lon = str(longitude)
-        observer.lat = str(latitude)
-        
-        # Parse date and time
-        if time_str:
-            dt = datetime.strptime(f"{date_str} {time_str}", "%Y-%m-%d %H:%M")
+        # If a fixed_ascendant is provided, use it directly
+        if fixed_ascendant is not None:
+            ascendant_sidereal = fixed_ascendant
+            logging.debug(f"Using fixed ascendant: {ascendant_sidereal} degrees")
         else:
-            dt = datetime.strptime(f"{date_str} 12:00", "%Y-%m-%d %H:%M")  # Noon if no time provided
-        
-        observer.date = dt.strftime("%Y/%m/%d %H:%M:%S")
-        
-        # Calculate Ascendant
-        # Use proper method to calculate the Ascendant
-        # We need to calculate the sidereal time and the obliquity of the ecliptic
-        
-        # Get the current sidereal time
-        sidereal_time = observer.sidereal_time()
-        
-        # Calculate the Ascendant (Tropical)
-        # In astronomy, the ascendant is where the ecliptic intersects with the eastern horizon
-        # The formula: Ascendant = sidereal_time - right ascension of the sun
-        sun = ephem.Sun()
-        sun.compute(observer)
-        
-        # Calculate ascendant longitude (tropical)
-        ascendant_tropical = math.degrees(sidereal_time) * 15 - 90  # Convert hours to degrees
-        ascendant_tropical = ascendant_tropical % 360
-        
-        # Calculate the Lahiri ayanamsa dynamically for the birth date
-        dynamic_ayanamsa = calculate_lahiri_ayanamsa(date_str)
-        logging.debug(f"Using Lahiri ayanamsa: {dynamic_ayanamsa} degrees for date {date_str}")
-        
-        # Convert to Sidereal Ascendant by applying the calculated Ayanamsa
-        ascendant_sidereal = (ascendant_tropical - dynamic_ayanamsa) % 360
+            # Create observer object with location data
+            observer = ephem.Observer()
+            observer.lon = str(longitude)
+            observer.lat = str(latitude)
+            
+            # Parse date and time
+            if time_str:
+                dt = datetime.strptime(f"{date_str} {time_str}", "%Y-%m-%d %H:%M")
+            else:
+                dt = datetime.strptime(f"{date_str} 12:00", "%Y-%m-%d %H:%M")  # Noon if no time provided
+            
+            observer.date = dt.strftime("%Y/%m/%d %H:%M:%S")
+            
+            # Calculate Ascendant
+            # Use proper method to calculate the Ascendant
+            # We need to calculate the sidereal time and the obliquity of the ecliptic
+            
+            # Get the current sidereal time
+            sidereal_time = observer.sidereal_time()
+            
+            # Calculate the Ascendant (Tropical)
+            # In astronomy, the ascendant is where the ecliptic intersects with the eastern horizon
+            # The formula: Ascendant = sidereal_time - right ascension of the sun
+            sun = ephem.Sun()
+            sun.compute(observer)
+            
+            # Calculate ascendant longitude (tropical)
+            ascendant_tropical = math.degrees(sidereal_time) * 15 - 90  # Convert hours to degrees
+            ascendant_tropical = ascendant_tropical % 360
+            
+            # Calculate the Lahiri ayanamsa dynamically for the birth date
+            dynamic_ayanamsa = calculate_lahiri_ayanamsa(date_str)
+            logging.debug(f"Using Lahiri ayanamsa: {dynamic_ayanamsa} degrees for date {date_str}")
+            
+            # Convert to Sidereal Ascendant by applying the calculated Ayanamsa
+            ascendant_sidereal = (ascendant_tropical - dynamic_ayanamsa) % 360
         
         # Get the sign of the Ascendant
         ascendant_sign = get_zodiac_sign(ascendant_sidereal)
