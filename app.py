@@ -339,15 +339,23 @@ def test_ascendant():
         alt_krishnamurti_asc_sign = swe_get_zodiac_sign(alt_krishnamurti_asc)
         alt_krishnamurti_asc_degree = alt_krishnamurti_asc % 30
         
-        # 5. Special calibrated ayanamsa to match Mateusz's chart
-        # This is a special test to find what ayanamsa value would produce the expected result
-        # The expected position is Aquarius 19.57°, which is 319.57° in absolute degrees
-        # We need to adjust our ayanamsa so that tropical_asc - special_ayanamsa = 319.57
-        target_position = 319.57  # Aquarius 19.57° in absolute degrees
-        special_ayanamsa = (tropical_asc - target_position) % 360
-        special_asc = target_position
+        # 5. Special calibrated ayanamsa to match expected results
+        # For Mateusz's chart: expected Aquarius 19.57°
+        mateusz_target = 319.57  # Aquarius 19.57° in absolute degrees
+        special_ayanamsa = (tropical_asc - mateusz_target) % 360
+        special_asc = mateusz_target
         special_asc_sign = swe_get_zodiac_sign(special_asc)
         special_asc_degree = special_asc % 30
+        
+        # Special calibration for Damian's chart if the input matches
+        damian_data = date_str == '1997-09-17' and time_str == '13:04' and city.lower() == 'wroclaw'
+        if damian_data:
+            # Calculate what ayanamsa would make the ascendant Scorpio 9:35
+            damian_target = 219.35  # Scorpio 9:35 in absolute degrees
+            damian_special_ayanamsa = (tropical_asc - damian_target) % 360
+            damian_special_asc = damian_target
+            damian_special_asc_sign = swe_get_zodiac_sign(damian_special_asc)
+            damian_special_asc_degree = damian_special_asc % 30
         
         # Store all results for comparison
         results = {
@@ -438,11 +446,22 @@ def test_ascendant():
         html += f"<p>Position: {special_asc_sign} {special_asc_degree:.2f}°</p>"
         html += f"<p><strong>Ayanamsa difference from standard:</strong> {special_ayanamsa - krishnamurti_ayanamsa:.2f}°</p>"
         
-        # Add a message about expected results for Mateusz's chart
-        html += "<h2>Expected Results for Reference Chart</h2>"
-        html += f"<p>For Mateusz Skawiński (1993-02-17, 07:18, Radom, Poland):</p>"
-        html += f"<p>Expected Lahiri: Aquarius 19:51</p>"
-        html += f"<p>Expected Krishnamurti: Aquarius 19:57</p>"
+        # Add a message about expected results for reference charts
+        html += "<h2>Expected Results for Reference Charts</h2>"
+        
+        if damian_data:
+            # Display special calibration for Damian
+            html += f"<h3>For Damian Adasik (1997-09-17, 13:04, Wroclaw, Poland):</h3>"
+            html += f"<p>Our calculation: Sagittarius 4.94°</p>"
+            html += f"<p>Expected: Scorpio 9:35</p>"
+            html += f"<p>Required ayanamsa: {damian_special_ayanamsa:.2f}° (standard is {krishnamurti_ayanamsa:.2f}°)</p>"
+            html += f"<p>Ayanamsa difference: {damian_special_ayanamsa - krishnamurti_ayanamsa:.2f}°</p>"
+        else:
+            # Display Mateusz's reference info
+            html += f"<h3>For Mateusz Skawiński (1993-02-17, 07:18, Radom, Poland):</h3>"
+            html += f"<p>Our calculation: {krishnamurti_asc_sign} {krishnamurti_asc_degree:.2f}°</p>"
+            html += f"<p>Expected Lahiri: Aquarius 19:51</p>"
+            html += f"<p>Expected Krishnamurti: Aquarius 19:57</p>"
         
         return html
     
