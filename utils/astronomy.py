@@ -119,17 +119,19 @@ def calculate_planet_positions(date_str, time_str, longitude, latitude, ephemeri
             logging.debug(f"Krishnamurti ayanamsa for {date_str}: {krishnamurti_ayanamsa:.4f}°")
             
             # Define planet IDs and their names
+            # Using direct values instead of constants:
+            # Sun=0, Moon=1, Mercury=2, Venus=3, Mars=4, Jupiter=5, Saturn=6, Uranus=7, Neptune=8, Pluto=9
             planet_info = {
-                swe.SUN: "Sun",
-                swe.MOON: "Moon",
-                swe.MERCURY: "Mercury",
-                swe.VENUS: "Venus",
-                swe.MARS: "Mars",
-                swe.JUPITER: "Jupiter",
-                swe.SATURN: "Saturn",
-                swe.URANUS: "Uranus",
-                swe.NEPTUNE: "Neptune",
-                swe.PLUTO: "Pluto"
+                0: "Sun",
+                1: "Moon",
+                2: "Mercury",
+                3: "Venus",
+                4: "Mars",
+                5: "Jupiter",
+                6: "Saturn",
+                7: "Uranus",
+                8: "Neptune",
+                9: "Pluto"
             }
             
             # Calculate positions for each planet

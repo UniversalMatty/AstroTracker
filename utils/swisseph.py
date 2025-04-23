@@ -156,11 +156,22 @@ def calculate_planet_position(planet_id, jd_ut):
         # SEFLG_SPEED: Include speed calculation for retrograde detection (value = 256)
         result = swe.calc_ut(jd_ut, planet_id, 2 | 256)
         
-        if isinstance(result, tuple) and len(result) >= 6:
-            # Extract longitude and speed
-            tropical_longitude = result[0]
-            speed = result[3]  # Daily speed in longitude
-            
+        # The result from swe.calc_ut might be a tuple of (position_tuple, flags)
+        # or just a position tuple directly, depending on the Swiss Ephemeris version
+        if isinstance(result, tuple):
+            if len(result) == 2 and isinstance(result[0], tuple):
+                # It's a tuple of (position_tuple, flags)
+                position_data = result[0]
+                tropical_longitude = position_data[0]
+                speed = position_data[3]  # Daily speed in longitude
+            elif len(result) >= 6:
+                # It's directly a position tuple
+                tropical_longitude = result[0]
+                speed = result[3]  # Daily speed in longitude
+            else:
+                logging.error(f"Unexpected result format from swe.calc_ut: {result}")
+                return 0.0, 0.0, False
+                
             # Planet is retrograde if speed is negative
             retrograde = speed < 0
             
@@ -197,10 +208,18 @@ def calculate_lunar_nodes(jd_ut):
         # 11 is the Swiss Ephemeris constant for Mean Node
         result = swe.calc_ut(jd_ut, 11, 2)  # 2 = SEFLG_SWIEPH
         
-        if isinstance(result, tuple) and len(result) >= 6:
-            # Extract tropical longitude
-            rahu_tropical = result[0]
-            
+        # Handle different potential return formats
+        if isinstance(result, tuple):
+            if len(result) == 2 and isinstance(result[0], tuple):
+                # It's a tuple of (position_tuple, flags)
+                rahu_tropical = result[0][0]
+            elif len(result) >= 6:
+                # It's directly a position tuple
+                rahu_tropical = result[0]
+            else:
+                logging.error(f"Unexpected result format from swe.calc_ut for Node: {result}")
+                return 0.0, 180.0
+                
             # Convert to sidereal using ayanamsa
             ayanamsa = calculate_ayanamsa(jd_ut)
             rahu_sidereal = (rahu_tropical - ayanamsa) % 360
