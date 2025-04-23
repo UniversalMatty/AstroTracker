@@ -341,10 +341,11 @@ def test_ascendant():
         
         # 5. Special calibrated ayanamsa to match Mateusz's chart
         # This is a special test to find what ayanamsa value would produce the expected result
-        # Adjusting by roughly -30 degrees to shift from Pisces to Aquarius
-        # Aquarius is 330-360 degrees, while our current result is in Pisces (360-390)
-        special_ayanamsa = 22.3148 + 30 - 19.57/30*30  # Formula to get Aquarius 19.57
-        special_asc = (tropical_asc - special_ayanamsa) % 360
+        # The expected position is Aquarius 19.57°, which is 319.57° in absolute degrees
+        # We need to adjust our ayanamsa so that tropical_asc - special_ayanamsa = 319.57
+        target_position = 319.57  # Aquarius 19.57° in absolute degrees
+        special_ayanamsa = (tropical_asc - target_position) % 360
+        special_asc = target_position
         special_asc_sign = swe_get_zodiac_sign(special_asc)
         special_asc_degree = special_asc % 30
         
@@ -405,6 +406,7 @@ def test_ascendant():
         html += f"<p>Standard Krishnamurti: {krishnamurti_ayanamsa:.4f}°</p>"
         html += f"<p>Lahiri: {lahiri_ayanamsa:.4f}°</p>" 
         html += f"<p>Alt Krishnamurti (-1°): {alt_krishnamurti_ayanamsa:.4f}°</p>"
+        html += f"<p>Special Calibrated Ayanamsa: {special_ayanamsa:.4f}° (to match Aquarius 19.57°)</p>"
         
         html += "<h2>Ascendant Calculations</h2>"
         
@@ -427,6 +429,14 @@ def test_ascendant():
         html += "<h3>Alternative Krishnamurti (-1°)</h3>"
         html += f"<p>Formula: {tropical_asc:.2f}° - {alt_krishnamurti_ayanamsa:.2f}° = {alt_krishnamurti_asc:.2f}°</p>"
         html += f"<p>Position: {alt_krishnamurti_asc_sign} {alt_krishnamurti_asc_degree:.2f}°</p>"
+        
+        # 5. Special Calibrated position
+        html += "<h3>Special Calibrated Position (matching reference)</h3>"
+        html += f"<p>Target position: Aquarius 19.57° (319.57° absolute)</p>"
+        html += f"<p>Required ayanamsa: {special_ayanamsa:.4f}°</p>"
+        html += f"<p>Formula: {tropical_asc:.2f}° - {special_ayanamsa:.2f}° = {special_asc:.2f}°</p>"
+        html += f"<p>Position: {special_asc_sign} {special_asc_degree:.2f}°</p>"
+        html += f"<p><strong>Ayanamsa difference from standard:</strong> {special_ayanamsa - krishnamurti_ayanamsa:.2f}°</p>"
         
         # Add a message about expected results for Mateusz's chart
         html += "<h2>Expected Results for Reference Chart</h2>"
