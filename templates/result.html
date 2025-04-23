@@ -129,21 +129,25 @@
                                 </p>
                                 
                                 <!-- List planets in this house -->
-                                {% set planets_in_house = [] %}
+                                {% set has_planets = false %}
+                                
+                                <!-- Check if any planets are in this house -->
                                 {% for planet in planets %}
                                     {% if planet.sign == house.sign %}
-                                        {% do planets_in_house.append(planet) %}
+                                        {% set has_planets = true %}
                                     {% endif %}
                                 {% endfor %}
                                 
-                                {% if planets_in_house %}
+                                {% if has_planets %}
                                 <div class="mt-3">
                                     <strong>Planets:</strong>
                                     <div class="mt-2">
-                                        {% for planet in planets_in_house %}
-                                        <span class="planet-badge bg-dark {% if planet.retrograde %}retrograde{% endif %}">
-                                            {{ planet.name }}
-                                        </span>
+                                        {% for planet in planets %}
+                                            {% if planet.sign == house.sign %}
+                                            <span class="planet-badge bg-dark {% if planet.retrograde %}retrograde{% endif %}">
+                                                {{ planet.name }}
+                                            </span>
+                                            {% endif %}
                                         {% endfor %}
                                     </div>
                                 </div>
