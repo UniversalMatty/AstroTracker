@@ -153,30 +153,17 @@ def get_nakshatra(longitude):
         "Purva Bhadrapada", "Uttara Bhadrapada", "Revati"
     ]
     
-    # Nakshatra rulers (deities)
-    rulers = [
-        "Ashwini Kumaras", "Yama", "Agni", 
-        "Brahma", "Soma", "Rudra", 
-        "Aditi", "Brihaspati", "Sarpa", 
-        "Pitrs", "Bhaga", "Aryaman", 
-        "Savitar", "Tvashtr", "Vayu", 
-        "Indra-Agni", "Mitra", "Indra", 
-        "Nirriti", "Apas", "Vishvakarma", 
-        "Vishnu", "Vasus", "Varuna", 
-        "Ajaikapada", "Ahir Budhnya", "Pushan"
-    ]
-    
-    # Symbol or characteristics
-    symbols = [
-        "Horse's head", "Yoni", "Razor/Flame", 
-        "Cart/Wheeled vehicle", "Deer head", "Teardrop", 
-        "Bow", "Flower", "Serpent", 
-        "Throne", "Front of a bed", "Back of a bed", 
-        "Hand", "Pearl/Jewel", "Coral", 
-        "Potter's wheel", "Lotus", "Earring/Umbrella", 
-        "Tied roots", "Fan", "Elephant tusk", 
-        "Trident", "Drum", "Empty circle", 
-        "Two-faced man", "Two men carrying a bier", "Fish"
+    # Nakshatra ruling planets (for Vedic astrology)
+    ruling_planets = [
+        "Ketu", "Venus", "Sun", 
+        "Moon", "Mars", "Rahu", 
+        "Jupiter", "Saturn", "Mercury", 
+        "Ketu", "Venus", "Sun", 
+        "Moon", "Mars", "Rahu", 
+        "Jupiter", "Saturn", "Mercury", 
+        "Ketu", "Venus", "Sun", 
+        "Moon", "Mars", "Rahu", 
+        "Jupiter", "Saturn", "Mercury"
     ]
     
     # Each nakshatra spans 13 degrees and 20 minutes (13.33333... degrees)
@@ -190,8 +177,7 @@ def get_nakshatra(longitude):
     
     return {
         'name': nakshatras[nakshatra_index],
-        'ruler': rulers[nakshatra_index],
-        'symbol': symbols[nakshatra_index],
+        'ruling_planet': ruling_planets[nakshatra_index],
         'position': f"{position_in_nakshatra:.1f}%"
     }
 

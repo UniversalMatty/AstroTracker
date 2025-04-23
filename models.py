@@ -31,6 +31,7 @@ class PlanetPosition(db.Model):
     sign = db.Column(db.String(20), nullable=False)
     retrograde = db.Column(db.Boolean, default=False)
     nakshatra_name = db.Column(db.String(50), nullable=True)
+    nakshatra_ruling_planet = db.Column(db.String(50), nullable=True)
     
     def __repr__(self):
         return f'<PlanetPosition {self.planet_name} at {self.longitude}>'

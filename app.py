@@ -68,14 +68,32 @@ def calculate():
         longitude, latitude = coordinates
         planets = calculate_planet_positions(dob_date, dob_time, longitude, latitude)
         
-        # Calculate the ascendant based on birth time and location
-        # Note: The ascendant is location and time specific
-        fixed_ascendant = None  # We'll let the calculate_houses function determine the ascendant
+        # Calculate houses and get ascendant
+        houses = calculate_houses(dob_date, dob_time, longitude, latitude)
         
-        # Calculate houses with optional fixed ascendant
-        houses = calculate_houses(dob_date, dob_time, longitude, latitude, fixed_ascendant)
+        # Get the ascendant from the first house
+        ascendant_sign = houses[0]['sign']
+        ascendant_longitude = houses[0]['cusp_longitude'] 
         
-        # Get nakshatra for each planet
+        # Create an ascendant "planet" entry and insert it after the Sun in the planets list
+        sun_index = next((i for i, p in enumerate(planets) if p['name'] == 'Sun'), -1)
+        
+        ascendant_entry = {
+            'name': 'Ascendant',
+            'longitude': ascendant_longitude,
+            'formatted_position': f"{ascendant_sign} 0°",
+            'sign': ascendant_sign,
+            'retrograde': False
+        }
+        
+        # Insert ascendant after Sun
+        if sun_index != -1:
+            planets.insert(sun_index + 1, ascendant_entry)
+        else:
+            # Fallback: add at the beginning if Sun not found
+            planets.insert(0, ascendant_entry)
+        
+        # Get nakshatra for each planet including ascendant
         for planet in planets:
             planet['nakshatra'] = get_nakshatra(planet['longitude'])
         
@@ -199,15 +217,35 @@ def view_chart(chart_id):
         planets.append(planet)
     
     # Calculate houses dynamically based on birth time and location
-    fixed_ascendant = None  # Let the calculate_houses function determine the ascendant
-    
     houses = calculate_houses(
         chart.birth_date.strftime('%Y-%m-%d'),
         chart.birth_time.strftime('%H:%M') if chart.birth_time else None,
         chart.longitude,
-        chart.latitude,
-        fixed_ascendant
+        chart.latitude
     )
+    
+    # Get the ascendant from the first house
+    ascendant_sign = houses[0]['sign']
+    ascendant_longitude = houses[0]['cusp_longitude']
+    
+    # Create an ascendant "planet" entry and insert it after the Sun in the planets list
+    sun_index = next((i for i, p in enumerate(planets) if p['name'] == 'Sun'), -1)
+    
+    ascendant_entry = {
+        'name': 'Ascendant',
+        'longitude': ascendant_longitude,
+        'formatted_position': f"{ascendant_sign} 0°",
+        'sign': ascendant_sign,
+        'retrograde': False,
+        'nakshatra': get_nakshatra(ascendant_longitude)
+    }
+    
+    # Insert ascendant after Sun
+    if sun_index != -1:
+        planets.insert(sun_index + 1, ascendant_entry)
+    else:
+        # Fallback: add at the beginning if Sun not found
+        planets.insert(0, ascendant_entry)
     
     house_meanings = get_house_meanings()
     

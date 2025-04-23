@@ -36,15 +36,20 @@ def calculate_jd_ut(date_str, time_str=None):
         raise
 
 def calculate_ayanamsa(jd_ut):
-    """Calculate Lahiri ayanamsa for a given Julian Day"""
+    """Calculate Krishnamurti ayanamsa for a given Julian Day"""
     try:
-        # Use Swiss Ephemeris to calculate Lahiri ayanamsa
+        # Set ayanamsa to Krishnamurti (also known as KP ayanamsa)
+        # Swiss Ephemeris constant for Krishnamurti ayanamsa is SEI_SIDM_KRISHNAMURTI = 5
+        swe.set_sid_mode(5)  # Set to Krishnamurti ayanamsa
+        
+        # Get ayanamsa value for the given date
         ayanamsa = swe.get_ayanamsa(jd_ut)
+        logging.debug(f"Krishnamurti ayanamsa for JD {jd_ut}: {ayanamsa}")
         return ayanamsa
     except Exception as e:
-        logging.error(f"Error calculating ayanamsa: {str(e)}")
-        # Default Lahiri ayanamsa if calculation fails
-        return 23.85
+        logging.error(f"Error calculating Krishnamurti ayanamsa: {str(e)}")
+        # Default Krishnamurti ayanamsa if calculation fails (approx. value for current time)
+        return 23.86
 
 def calculate_houses(jd_ut, latitude, longitude):
     """
