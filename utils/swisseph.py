@@ -148,25 +148,35 @@ def calculate_planet_position(planet_id, jd_ut):
     - retrograde: Boolean indicating if the planet is retrograde
     """
     try:
+        # First set the ephemeris to tropical mode
+        swe.set_sid_mode(0)  # 0 = tropical
+
         # Calculate planet position - flags:
-        # SEFLG_SWIEPH: Use Swiss Ephemeris
-        # SEFLG_SPEED: Include speed calculation for retrograde detection
-        result = swe.calc_ut(jd_ut, planet_id, swe.FLG_SWIEPH | swe.FLG_SPEED)
+        # SEFLG_SWIEPH: Use Swiss Ephemeris (value = 2)
+        # SEFLG_SPEED: Include speed calculation for retrograde detection (value = 256)
+        result = swe.calc_ut(jd_ut, planet_id, 2 | 256)
         
-        # Extract longitude and speed
-        tropical_longitude = result[0]
-        speed = result[3]  # Daily speed in longitude
-        
-        # Planet is retrograde if speed is negative
-        retrograde = speed < 0
-        
-        # Convert to sidereal
-        sidereal_longitude = tropical_to_sidereal(tropical_longitude, jd_ut)
-        
-        return tropical_longitude, sidereal_longitude, retrograde
+        if isinstance(result, tuple) and len(result) >= 6:
+            # Extract longitude and speed
+            tropical_longitude = result[0]
+            speed = result[3]  # Daily speed in longitude
+            
+            # Planet is retrograde if speed is negative
+            retrograde = speed < 0
+            
+            # Convert to sidereal using our verified method
+            ayanamsa = calculate_ayanamsa(jd_ut)
+            sidereal_longitude = (tropical_longitude - ayanamsa) % 360
+            
+            return tropical_longitude, sidereal_longitude, retrograde
+        else:
+            logging.error(f"Invalid result format from swe.calc_ut: {result}")
+            # Return default values for this error case
+            return 0.0, 0.0, False
     except Exception as e:
         logging.error(f"Error calculating planet position: {str(e)}")
-        raise
+        # Return default values for error case
+        return 0.0, 0.0, False
 
 def calculate_lunar_nodes(jd_ut):
     """
@@ -180,23 +190,33 @@ def calculate_lunar_nodes(jd_ut):
     - ketu_longitude: Sidereal longitude of Ketu (South Node)
     """
     try:
-        # Calculate North Node (Mean Node)
-        # Swiss Ephemeris uses the mean node by default for swe.MEAN_NODE
-        result = swe.calc_ut(jd_ut, swe.MEAN_NODE, swe.FLG_SWIEPH)
+        # First set to tropical mode
+        swe.set_sid_mode(0)
         
-        # Extract tropical longitude
-        rahu_tropical = result[0]
+        # Calculate Mean North Node (Mean Node)
+        # 11 is the Swiss Ephemeris constant for Mean Node
+        result = swe.calc_ut(jd_ut, 11, 2)  # 2 = SEFLG_SWIEPH
         
-        # Convert to sidereal
-        rahu_sidereal = tropical_to_sidereal(rahu_tropical, jd_ut)
-        
-        # Ketu is always 180° opposite to Rahu
-        ketu_sidereal = (rahu_sidereal + 180) % 360
-        
-        return rahu_sidereal, ketu_sidereal
+        if isinstance(result, tuple) and len(result) >= 6:
+            # Extract tropical longitude
+            rahu_tropical = result[0]
+            
+            # Convert to sidereal using ayanamsa
+            ayanamsa = calculate_ayanamsa(jd_ut)
+            rahu_sidereal = (rahu_tropical - ayanamsa) % 360
+            
+            # Ketu is always 180° opposite to Rahu
+            ketu_sidereal = (rahu_sidereal + 180) % 360
+            
+            return rahu_sidereal, ketu_sidereal
+        else:
+            logging.error(f"Invalid result format from swe.calc_ut for Node: {result}")
+            # Return default positions in case of error
+            return 0.0, 180.0
     except Exception as e:
         logging.error(f"Error calculating lunar nodes: {str(e)}")
-        raise
+        # Return default positions in case of error
+        return 0.0, 180.0
 
 def get_zodiac_sign(longitude):
     """

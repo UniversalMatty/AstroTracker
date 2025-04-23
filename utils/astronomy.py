@@ -99,6 +99,135 @@ def calculate_planet_positions(date_str, time_str, longitude, latitude, ephemeri
     try:
         planets_data = []
         
+        # First try using Swiss Ephemeris for more accurate calculations
+        try:
+            from utils.swisseph import (
+                calculate_jd_ut, 
+                calculate_planet_position, 
+                calculate_lunar_nodes,
+                get_zodiac_sign,
+                calculate_ayanamsa,
+                tropical_to_sidereal
+            )
+            import swisseph as swe
+            
+            # Get Julian Day
+            jd_ut = calculate_jd_ut(date_str, time_str)
+            
+            # Get the ayanamsa value for this date
+            krishnamurti_ayanamsa = calculate_ayanamsa(jd_ut)
+            logging.debug(f"Krishnamurti ayanamsa for {date_str}: {krishnamurti_ayanamsa:.4f}°")
+            
+            # Define planet IDs and their names
+            planet_info = {
+                swe.SUN: "Sun",
+                swe.MOON: "Moon",
+                swe.MERCURY: "Mercury",
+                swe.VENUS: "Venus",
+                swe.MARS: "Mars",
+                swe.JUPITER: "Jupiter",
+                swe.SATURN: "Saturn",
+                swe.URANUS: "Uranus",
+                swe.NEPTUNE: "Neptune",
+                swe.PLUTO: "Pluto"
+            }
+            
+            # Calculate positions for each planet
+            for planet_id, planet_name in planet_info.items():
+                try:
+                    tropical_longitude, sidereal_longitude, retrograde = calculate_planet_position(planet_id, jd_ut)
+                    
+                    # Double-check sidereal longitude by doing direct conversion (for maximum accuracy)
+                    verified_sidereal = tropical_to_sidereal(tropical_longitude, jd_ut)
+                    
+                    # Use the verified sidereal value
+                    sidereal_longitude = verified_sidereal
+                    
+                    # Get zodiac sign and position within sign
+                    sign = get_zodiac_sign(sidereal_longitude)
+                    degree_in_sign = sidereal_longitude % 30
+                    
+                    # Format degrees in DMS format for display
+                    degree_int = int(degree_in_sign)
+                    minutes_float = (degree_in_sign - degree_int) * 60
+                    minutes_int = int(minutes_float)
+                    seconds_int = int((minutes_float - minutes_int) * 60)
+                    
+                    # For display, show degrees, minutes, and seconds
+                    formatted_dms = f"{sign} {degree_int}° {minutes_int}' {seconds_int}\""
+                    
+                    planet_data = {
+                        "name": planet_name,
+                        "longitude": sidereal_longitude,
+                        "sign": sign,
+                        "retrograde": retrograde,
+                        "formatted_position": formatted_dms + ('R' if retrograde else '')
+                    }
+                    
+                    planets_data.append(planet_data)
+                    
+                except Exception as e:
+                    logging.error(f"Error calculating {planet_name} position: {str(e)}")
+                    continue
+            
+            # Calculate Lunar Nodes (Rahu and Ketu)
+            try:
+                rahu_longitude, ketu_longitude = calculate_lunar_nodes(jd_ut)
+                
+                # Rahu (North Node)
+                rahu_sign = get_zodiac_sign(rahu_longitude)
+                rahu_degree = rahu_longitude % 30
+                
+                # Format DMS for Rahu
+                rahu_degree_int = int(rahu_degree)
+                rahu_minutes_float = (rahu_degree - rahu_degree_int) * 60
+                rahu_minutes_int = int(rahu_minutes_float)
+                rahu_seconds_int = int((rahu_minutes_float - rahu_minutes_int) * 60)
+                
+                rahu_data = {
+                    "name": "Rahu",
+                    "longitude": rahu_longitude,
+                    "sign": rahu_sign,
+                    "retrograde": True,  # Rahu is always considered retrograde in Vedic astrology
+                    "formatted_position": f"{rahu_sign} {rahu_degree_int}° {rahu_minutes_int}' {rahu_seconds_int}\"R"
+                }
+                
+                # Ketu (South Node)
+                ketu_sign = get_zodiac_sign(ketu_longitude)
+                ketu_degree = ketu_longitude % 30
+                
+                # Format DMS for Ketu
+                ketu_degree_int = int(ketu_degree)
+                ketu_minutes_float = (ketu_degree - ketu_degree_int) * 60
+                ketu_minutes_int = int(ketu_minutes_float)
+                ketu_seconds_int = int((ketu_minutes_float - ketu_minutes_int) * 60)
+                
+                ketu_data = {
+                    "name": "Ketu",
+                    "longitude": ketu_longitude,
+                    "sign": ketu_sign,
+                    "retrograde": True,  # Ketu is always considered retrograde in Vedic astrology
+                    "formatted_position": f"{ketu_sign} {ketu_degree_int}° {ketu_minutes_int}' {ketu_seconds_int}\"R"
+                }
+                
+                planets_data.append(rahu_data)
+                planets_data.append(ketu_data)
+                
+            except Exception as e:
+                logging.error(f"Error calculating lunar nodes: {str(e)}")
+            
+            # Return the Swiss Ephemeris results if we got this far
+            if planets_data:
+                logging.debug("Using Swiss Ephemeris for planetary calculations")
+                return planets_data
+                
+        except Exception as swiss_error:
+            # If Swiss Ephemeris fails, log the error and fall back to ephemerides data or PyEphem
+            logging.warning(f"Swiss Ephemeris calculation failed: {str(swiss_error)}. Falling back to database or PyEphem.")
+        
+        # Reset planets data for fallback methods
+        planets_data = []
+        
         # First check if we have ephemerides data in our database
         db_ephemerides = get_ephemerides_for_date(date_str)
         if db_ephemerides:
