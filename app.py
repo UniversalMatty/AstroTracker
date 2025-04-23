@@ -116,14 +116,9 @@ def calculate():
         longitude, latitude = coordinates
         planets = calculate_planet_positions(dob_date, dob_time, longitude, latitude, ephemerides_data)
         
-        # For our example ephemerides (1993-02-17), use a fixed Ascendant degree for houses
-        # This ensures consistent house placements with the Vedic chart
-        fixed_ascendant = None
-        if ephemerides_data and dob_date == '1993-02-17':
-            # Use the user's actual ascendant: Aquarius 21:02:41
-            # Aquarius starts at 300 degrees, plus 21.0447 degrees = 321.0447
-            fixed_ascendant = 321.0447  # Aquarius 21:02:41
-            logging.debug(f"Using fixed ascendant of {fixed_ascendant} degrees for houses")
+        # Calculate the ascendant based on birth time and location
+        # Note: The ascendant is location and time specific
+        fixed_ascendant = None  # We'll let the calculate_houses function determine the ascendant
         
         # Calculate houses with optional fixed ascendant
         houses = calculate_houses(dob_date, dob_time, longitude, latitude, fixed_ascendant)
@@ -251,10 +246,8 @@ def view_chart(chart_id):
         
         planets.append(planet)
     
-    # Calculate houses (using fixed ascendant for 1993-02-17)
-    fixed_ascendant = None
-    if chart.birth_date.strftime('%Y-%m-%d') == '1993-02-17':
-        fixed_ascendant = 321.0447  # Aquarius 21:02:41
+    # Calculate houses dynamically based on birth time and location
+    fixed_ascendant = None  # Let the calculate_houses function determine the ascendant
     
     houses = calculate_houses(
         chart.birth_date.strftime('%Y-%m-%d'),
