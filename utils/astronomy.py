@@ -2,6 +2,7 @@ import ephem
 import math
 from datetime import datetime
 import logging
+from ephemerides_data import get_ephemerides_for_date
 
 # Planets and their corresponding PyEphem objects
 PLANETS = {
@@ -98,7 +99,13 @@ def calculate_planet_positions(date_str, time_str, longitude, latitude, ephemeri
     try:
         planets_data = []
         
-        # If we have ephemerides data, use it for all planets that are included
+        # First check if we have ephemerides data in our database
+        db_ephemerides = get_ephemerides_for_date(date_str)
+        if db_ephemerides:
+            logging.debug(f"Using ephemerides from database for date: {date_str}")
+            ephemerides_data = db_ephemerides
+            
+        # If we have ephemerides data (from parameter or database), use it
         if ephemerides_data:
             # Set retrograde status for specific planets in the ephemerides
             # In Vedic astrology, these planets are typically considered retrograde

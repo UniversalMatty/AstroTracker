@@ -64,57 +64,9 @@ def calculate():
             flash('Could not determine coordinates for the given location', 'danger')
             return redirect(url_for('index'))
         
-        # Handle ephemerides file upload
-        ephemerides_data = None
-        use_example_ephemerides = False
-        use_uploaded_ephemerides = False
-        
-        # Always use example ephemerides for all calculations
-        use_example_ephemerides = True
-        example_filepath = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'example_ephemerides.txt')
-        logging.debug(f"Using example ephemerides from: {example_filepath}")
-        
-        ephemerides_data = {}
-        try:
-            with open(example_filepath, 'r') as f:
-                for line in f:
-                    parts = line.strip().split(',')
-                    if len(parts) >= 2:
-                        planet_name = parts[0].strip()
-                        longitude = float(parts[1].strip())
-                        ephemerides_data[planet_name] = longitude
-                        logging.debug(f"Loaded example ephemerides data: {planet_name} = {longitude}")
-        except Exception as e:
-            logging.error(f"Error reading example ephemerides: {str(e)}")
-            
-        # If user uploaded a file (we'll ignore it for now and use the example data)
-        if 'ephemerides_file' in request.files:
-            file = request.files['ephemerides_file']
-            if file and file.filename and allowed_file(file.filename):
-                filename = secure_filename(file.filename)
-                filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-                file.save(filepath)
-                use_uploaded_ephemerides = True
-                
-                # Read ephemerides data
-                if filepath.endswith('.json'):
-                    with open(filepath, 'r') as f:
-                        ephemerides_data = json.load(f)
-                elif filepath.endswith('.csv') or filepath.endswith('.txt'):
-                    # Simple parsing for CSV/TXT file
-                    ephemerides_data = {}
-                    with open(filepath, 'r') as f:
-                        for line in f:
-                            parts = line.strip().split(',')
-                            if len(parts) >= 2:
-                                planet_name = parts[0].strip()
-                                longitude = float(parts[1].strip())
-                                ephemerides_data[planet_name] = longitude
-                                logging.debug(f"Loaded uploaded ephemerides data: {planet_name} = {longitude}")
-
-        # Calculate planetary positions
+        # Calculate planetary positions using PyEphem (dynamic calculation)
         longitude, latitude = coordinates
-        planets = calculate_planet_positions(dob_date, dob_time, longitude, latitude, ephemerides_data)
+        planets = calculate_planet_positions(dob_date, dob_time, longitude, latitude)
         
         # Calculate the ascendant based on birth time and location
         # Note: The ascendant is location and time specific
