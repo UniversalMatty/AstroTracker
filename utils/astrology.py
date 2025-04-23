@@ -82,7 +82,7 @@ def calculate_houses(date_str, time_str, longitude, latitude, fixed_ascendant=No
             # Convert to Sidereal Ascendant by applying the calculated Ayanamsa
             ascendant_sidereal = (ascendant_tropical - dynamic_ayanamsa) % 360
             
-            logging.debug(f"Calculated ascendant: tropical = {ascendant_tropical:.5f}°, sidereal = {ascendant_sidereal:.5f}°")
+            logging.debug(f"Calculated ascendant: tropical = {ascendant_tropical:.5f}° ({get_zodiac_sign(ascendant_tropical)}), sidereal = {ascendant_sidereal:.5f}° ({get_zodiac_sign(ascendant_sidereal)})")
         
         # Get the sign of the Ascendant
         ascendant_sign = get_zodiac_sign(ascendant_sidereal)
