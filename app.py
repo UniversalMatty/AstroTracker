@@ -28,8 +28,12 @@ def allowed_file(filename):
 def index():
     return render_template('index.html')
 
-@app.route('/calculate', methods=['POST'])
+@app.route('/calculate', methods=['GET', 'POST'])
 def calculate():
+    # If accessed via GET, redirect to the index page
+    if request.method == 'GET':
+        return redirect(url_for('index'))
+        
     try:
         # Extract form data
         name = request.form.get('name', '')
