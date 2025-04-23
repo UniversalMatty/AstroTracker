@@ -15,8 +15,20 @@ function renderCharts() {
     if (!planetsDataElement) return;
     
     try {
-        const planetsData = JSON.parse(planetsDataElement.getAttribute('data-planets'));
-        createZodiacChart(planetChartCanvas, planetsData);
+        // Get data from the attribute and handle possible errors
+        const planetsDataStr = planetsDataElement.getAttribute('data-planets');
+        console.log("Raw planets data:", planetsDataStr);
+        
+        // Parse the JSON data
+        const planetsData = JSON.parse(planetsDataStr);
+        console.log("Parsed planets data:", planetsData);
+        
+        // Make sure it's an array before proceeding
+        if (Array.isArray(planetsData)) {
+            createZodiacChart(planetChartCanvas, planetsData);
+        } else {
+            console.error("Expected planets data to be an array but got:", typeof planetsData);
+        }
     } catch (error) {
         console.error('Error parsing planet data:', error);
     }

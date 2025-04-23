@@ -55,12 +55,36 @@ def calculate():
         
         # Handle ephemerides file upload
         ephemerides_data = None
-        if 'ephemerides_file' in request.files:
+        use_example_ephemerides = False
+        use_uploaded_ephemerides = False
+        
+        # Check if user wants to use example ephemerides (always use this when DOB matches)
+        if dob_date == '1993-02-17':
+            use_example_ephemerides = True
+            example_filepath = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'example_ephemerides.txt')
+            logging.debug(f"Using example ephemerides from: {example_filepath}")
+            
+            ephemerides_data = {}
+            try:
+                with open(example_filepath, 'r') as f:
+                    for line in f:
+                        parts = line.strip().split(',')
+                        if len(parts) >= 2:
+                            planet_name = parts[0].strip()
+                            longitude = float(parts[1].strip())
+                            ephemerides_data[planet_name] = longitude
+                            logging.debug(f"Loaded example ephemerides data: {planet_name} = {longitude}")
+            except Exception as e:
+                logging.error(f"Error reading example ephemerides: {str(e)}")
+        
+        # If not using example data, check for uploaded file
+        elif 'ephemerides_file' in request.files:
             file = request.files['ephemerides_file']
             if file and file.filename and allowed_file(file.filename):
                 filename = secure_filename(file.filename)
                 filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
                 file.save(filepath)
+                use_uploaded_ephemerides = True
                 
                 # Read ephemerides data
                 if filepath.endswith('.json'):
@@ -73,7 +97,10 @@ def calculate():
                         for line in f:
                             parts = line.strip().split(',')
                             if len(parts) >= 2:
-                                ephemerides_data[parts[0]] = float(parts[1])
+                                planet_name = parts[0].strip()
+                                longitude = float(parts[1].strip())
+                                ephemerides_data[planet_name] = longitude
+                                logging.debug(f"Loaded uploaded ephemerides data: {planet_name} = {longitude}")
 
         # Calculate planetary positions
         longitude, latitude = coordinates
