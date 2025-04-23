@@ -1,0 +1,167 @@
+"""
+Swiss Ephemeris-based astrological calculations.
+Uses the swisseph library for accurate astronomical calculations.
+"""
+import os
+import swisseph as swe
+import logging
+from datetime import datetime, timezone
+
+# Set up Swiss Ephemeris
+# Path to ephemeris files
+EPHE_PATH = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+swe.set_ephe_path(EPHE_PATH)  # Use the root directory where SE1 files are stored
+
+def calculate_jd_ut(date_str, time_str=None):
+    """Calculate Julian Day (JD) in Universal Time from date and time strings"""
+    try:
+        if time_str:
+            dt = datetime.strptime(f"{date_str} {time_str}", "%Y-%m-%d %H:%M")
+        else:
+            dt = datetime.strptime(f"{date_str} 12:00", "%Y-%m-%d %H:%M")  # Noon if no time
+        
+        # Convert to UTC
+        dt_utc = dt.replace(tzinfo=timezone.utc)
+        
+        # Calculate Julian Day
+        year, month, day = dt.year, dt.month, dt.day
+        hour = dt.hour + dt.minute / 60.0
+        
+        # Use swisseph to get Julian day
+        jd_ut = swe.julday(year, month, day, hour)
+        
+        return jd_ut
+    except Exception as e:
+        logging.error(f"Error calculating Julian Day: {str(e)}")
+        raise
+
+def calculate_ayanamsa(jd_ut):
+    """Calculate Lahiri ayanamsa for a given Julian Day"""
+    try:
+        # Use Swiss Ephemeris to calculate Lahiri ayanamsa
+        ayanamsa = swe.get_ayanamsa(jd_ut)
+        return ayanamsa
+    except Exception as e:
+        logging.error(f"Error calculating ayanamsa: {str(e)}")
+        # Default Lahiri ayanamsa if calculation fails
+        return 23.85
+
+def calculate_houses(jd_ut, latitude, longitude):
+    """
+    Calculate house cusps and ascendant using Swiss Ephemeris.
+    
+    Parameters:
+    - jd_ut: Julian Day in Universal Time
+    - latitude: Geographic latitude in decimal degrees
+    - longitude: Geographic longitude in decimal degrees
+    
+    Returns a tuple of (houses, ascmc) where:
+    - houses: List of house cusps
+    - ascmc: List of special points (ascendant, midheaven, etc.)
+    """
+    try:
+        # Calculate houses - parameters:
+        # jd_ut: Julian day in UT
+        # lat: Latitude
+        # lon: Longitude
+        # hsys: House system ('W' for whole sign)
+        houses, ascmc = swe.houses(jd_ut, latitude, longitude, b'W')
+        
+        # Log the raw values for debugging
+        logging.debug(f"Swiss Ephemeris raw ascendant: {ascmc[0]}")
+        
+        return houses, ascmc
+    except Exception as e:
+        logging.error(f"Error calculating houses with Swiss Ephemeris: {str(e)}")
+        raise
+
+def tropical_to_sidereal(longitude, jd_ut):
+    """Convert tropical longitude to sidereal using Lahiri ayanamsa"""
+    try:
+        ayanamsa = calculate_ayanamsa(jd_ut)
+        sidereal_longitude = (longitude - ayanamsa) % 360
+        return sidereal_longitude
+    except Exception as e:
+        logging.error(f"Error converting tropical to sidereal: {str(e)}")
+        raise
+
+def calculate_planet_position(planet_id, jd_ut):
+    """
+    Calculate planet position using Swiss Ephemeris.
+    
+    Parameters:
+    - planet_id: Swiss Ephemeris planet ID (e.g., swe.SUN, swe.MOON)
+    - jd_ut: Julian Day in Universal Time
+    
+    Returns a tuple of:
+    - tropical_longitude: Longitude in tropical zodiac
+    - sidereal_longitude: Longitude in sidereal zodiac (Lahiri ayanamsa)
+    - retrograde: Boolean indicating if the planet is retrograde
+    """
+    try:
+        # Calculate planet position - flags:
+        # SEFLG_SWIEPH: Use Swiss Ephemeris
+        # SEFLG_SPEED: Include speed calculation for retrograde detection
+        result = swe.calc_ut(jd_ut, planet_id, swe.FLG_SWIEPH | swe.FLG_SPEED)
+        
+        # Extract longitude and speed
+        tropical_longitude = result[0]
+        speed = result[3]  # Daily speed in longitude
+        
+        # Planet is retrograde if speed is negative
+        retrograde = speed < 0
+        
+        # Convert to sidereal
+        sidereal_longitude = tropical_to_sidereal(tropical_longitude, jd_ut)
+        
+        return tropical_longitude, sidereal_longitude, retrograde
+    except Exception as e:
+        logging.error(f"Error calculating planet position: {str(e)}")
+        raise
+
+def calculate_lunar_nodes(jd_ut):
+    """
+    Calculate the positions of the North Node (Rahu) and South Node (Ketu).
+    
+    Parameters:
+    - jd_ut: Julian Day in Universal Time
+    
+    Returns a tuple of:
+    - rahu_longitude: Sidereal longitude of Rahu (North Node)
+    - ketu_longitude: Sidereal longitude of Ketu (South Node)
+    """
+    try:
+        # Calculate North Node (Mean Node)
+        # Swiss Ephemeris uses the mean node by default for swe.MEAN_NODE
+        result = swe.calc_ut(jd_ut, swe.MEAN_NODE, swe.FLG_SWIEPH)
+        
+        # Extract tropical longitude
+        rahu_tropical = result[0]
+        
+        # Convert to sidereal
+        rahu_sidereal = tropical_to_sidereal(rahu_tropical, jd_ut)
+        
+        # Ketu is always 180° opposite to Rahu
+        ketu_sidereal = (rahu_sidereal + 180) % 360
+        
+        return rahu_sidereal, ketu_sidereal
+    except Exception as e:
+        logging.error(f"Error calculating lunar nodes: {str(e)}")
+        raise
+
+def get_zodiac_sign(longitude):
+    """
+    Get zodiac sign from longitude in degrees.
+    
+    Parameters:
+    - longitude: Longitude in degrees (0-360)
+    
+    Returns the zodiac sign as a string.
+    """
+    signs = [
+        "Aries", "Taurus", "Gemini", "Cancer", 
+        "Leo", "Virgo", "Libra", "Scorpio", 
+        "Sagittarius", "Capricorn", "Aquarius", "Pisces"
+    ]
+    sign_index = int(longitude / 30)
+    return signs[sign_index % 12]

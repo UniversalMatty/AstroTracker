@@ -2,7 +2,9 @@ import math
 from datetime import datetime
 import ephem
 import logging
+import swisseph as swe
 from utils.astronomy import degrees_to_dms, get_zodiac_sign, calculate_lahiri_ayanamsa
+from utils.swisseph import calculate_jd_ut, calculate_houses as swe_calculate_houses, get_zodiac_sign as swe_get_zodiac_sign
 
 def calculate_houses(date_str, time_str, longitude, latitude, fixed_ascendant=None):
     """
@@ -26,65 +28,77 @@ def calculate_houses(date_str, time_str, longitude, latitude, fixed_ascendant=No
             ascendant_sidereal = fixed_ascendant
             logging.debug(f"Using fixed ascendant: {ascendant_sidereal} degrees")
         else:
-            # Create observer object with location data
-            observer = ephem.Observer()
-            observer.lon = str(longitude)
-            observer.lat = str(latitude)
+            # Calculate Julian Day in Universal Time
+            jd_ut = calculate_jd_ut(date_str, time_str)
+            logging.debug(f"Calculated Julian Day UT: {jd_ut}")
             
-            # Parse date and time
-            if time_str:
-                dt = datetime.strptime(f"{date_str} {time_str}", "%Y-%m-%d %H:%M")
-            else:
-                dt = datetime.strptime(f"{date_str} 12:00", "%Y-%m-%d %H:%M")  # Noon if no time provided
-            
-            observer.date = dt.strftime("%Y/%m/%d %H:%M:%S")
-            
-            # Calculate the Ascendant directly using PyEphem's built-in methods
-            # The Ascendant is the zodiac degree rising on the eastern horizon
-            
-            # Create a body representing the ecliptic point exactly on the eastern horizon
-            # First, set up an azimuthal point at the eastern horizon (azimuth = 90°)
-            body = ephem.FixedBody()
-            body._ra = 0  # Initial RA value, will be replaced
-            body._dec = 0  # Initial Dec value, will be replaced
-            body._epoch = observer.date  # Set the epoch to match observer time
-            
-            # Create a horizon object with Az=90° (due East) and Alt=0° (on horizon)
-            # In horizontal coordinates, azimuth 90° corresponds to East
-            az = math.pi/2  # 90 degrees in radians (East)
-            alt = 0.0  # 0 degrees altitude (on horizon)
-            
-            # Convert horizontal coordinates to equatorial
-            ra, dec = observer.radec_of(az, alt)
-            
-            # Set the body's coordinates
-            body._ra = ra
-            body._dec = dec
-            
-            # Compute the body
-            body.compute(observer)
-            
-            # Now convert to ecliptic coordinates to get the longitude
-            # This gives us the point on the ecliptic that is rising
-            ecl = ephem.Ecliptic(body)
-            
-            # Get the ecliptic longitude in degrees
-            ascendant_tropical = math.degrees(ecl.lon) % 360
-            
-            logging.debug(f"Raw ascendant calculation: azimuth={math.degrees(az)}, altitude={math.degrees(alt)}")
-            logging.debug(f"Equatorial coordinates: RA={math.degrees(ra)}, Dec={math.degrees(dec)}")
-            logging.debug(f"Ecliptic longitude (tropical): {ascendant_tropical}")
-            
-            # Calculate the Lahiri ayanamsa dynamically for the birth date
-            dynamic_ayanamsa = calculate_lahiri_ayanamsa(date_str)
-            logging.debug(f"Using Lahiri ayanamsa: {dynamic_ayanamsa} degrees for date {date_str}")
-            
-            # Convert to Sidereal Ascendant by applying the calculated Ayanamsa
-            ascendant_sidereal = (ascendant_tropical - dynamic_ayanamsa) % 360
-            
-            logging.debug(f"Calculated ascendant: tropical = {ascendant_tropical:.5f}° ({get_zodiac_sign(ascendant_tropical)}), sidereal = {ascendant_sidereal:.5f}° ({get_zodiac_sign(ascendant_sidereal)})")
+            # Use Swiss Ephemeris to calculate houses and ascendant
+            # This gives both tropical and sidereal values
+            try:
+                # First try with Swiss Ephemeris for most accurate results
+                houses_cusps, ascmc = swe.houses(jd_ut, latitude, longitude, b'W')
+                
+                # Get tropical ascendant from ascmc[0]
+                ascendant_tropical = ascmc[0]
+                logging.debug(f"Swiss Ephemeris raw ascendant (tropical): {ascendant_tropical}")
+                
+                # Apply Lahiri ayanamsa using Swiss Ephemeris
+                ayanamsa = swe.get_ayanamsa(jd_ut)
+                logging.debug(f"Swiss Ephemeris Lahiri ayanamsa: {ayanamsa}")
+                
+                # Calculate sidereal ascendant
+                ascendant_sidereal = (ascendant_tropical - ayanamsa) % 360
+                
+                logging.debug(f"Swiss Ephemeris calculated ascendant: tropical = {ascendant_tropical:.5f}° ({swe_get_zodiac_sign(ascendant_tropical)}), sidereal = {ascendant_sidereal:.5f}° ({swe_get_zodiac_sign(ascendant_sidereal)})")
+                
+            except Exception as swe_error:
+                # Fallback to PyEphem if Swiss Ephemeris fails
+                logging.warning(f"Swiss Ephemeris calculation failed: {str(swe_error)}. Falling back to PyEphem.")
+                
+                # Create observer object with location data
+                observer = ephem.Observer()
+                observer.lon = str(longitude)
+                observer.lat = str(latitude)
+                
+                # Parse date and time
+                if time_str:
+                    dt = datetime.strptime(f"{date_str} {time_str}", "%Y-%m-%d %H:%M")
+                else:
+                    dt = datetime.strptime(f"{date_str} 12:00", "%Y-%m-%d %H:%M")  # Noon if no time provided
+                
+                observer.date = dt.strftime("%Y/%m/%d %H:%M:%S")
+                
+                # Calculate the Ascendant using PyEphem
+                # Create a body representing the ecliptic point on the eastern horizon
+                body = ephem.FixedBody()
+                body._ra = 0  # Will be replaced
+                body._dec = 0  # Will be replaced
+                body._epoch = observer.date
+                
+                # Horizontal coordinates for eastern horizon
+                az = math.pi/2  # 90° East
+                alt = 0.0  # On horizon
+                
+                # Convert horizontal to equatorial
+                ra, dec = observer.radec_of(az, alt)
+                body._ra = ra
+                body._dec = dec
+                body.compute(observer)
+                
+                # Convert to ecliptic coordinates
+                ecl = ephem.Ecliptic(body)
+                ascendant_tropical = math.degrees(ecl.lon) % 360
+                
+                # Calculate dynamic ayanamsa
+                dynamic_ayanamsa = calculate_lahiri_ayanamsa(date_str)
+                logging.debug(f"PyEphem Lahiri ayanamsa: {dynamic_ayanamsa}")
+                
+                # Convert to sidereal
+                ascendant_sidereal = (ascendant_tropical - dynamic_ayanamsa) % 360
+                
+                logging.debug(f"PyEphem calculated ascendant: tropical = {ascendant_tropical:.5f}° ({get_zodiac_sign(ascendant_tropical)}), sidereal = {ascendant_sidereal:.5f}° ({get_zodiac_sign(ascendant_sidereal)})")
         
-        # Get the sign of the Ascendant
+        # Get the sign of the Ascendant (1st house)
         ascendant_sign = get_zodiac_sign(ascendant_sidereal)
         ascendant_sign_index = ["Aries", "Taurus", "Gemini", "Cancer", 
                                "Leo", "Virgo", "Libra", "Scorpio", 
