@@ -169,7 +169,8 @@ def save_chart():
                 longitude=planet['longitude'],
                 sign=planet['sign'],
                 retrograde=planet['retrograde'],
-                nakshatra_name=planet['nakshatra']['name'] if 'nakshatra' in planet else None
+                nakshatra_name=planet['nakshatra']['name'] if 'nakshatra' in planet else None,
+                nakshatra_ruling_planet=planet['nakshatra']['ruling_planet'] if 'nakshatra' in planet else None
             )
             db.session.add(planet_pos)
         
@@ -211,7 +212,9 @@ def view_chart(chart_id):
         # Add nakshatra if available
         if position.nakshatra_name:
             planet['nakshatra'] = {
-                'name': position.nakshatra_name
+                'name': position.nakshatra_name,
+                'ruling_planet': position.nakshatra_ruling_planet,
+                'position': '50.0%'  # Default position within nakshatra
             }
         
         planets.append(planet)
