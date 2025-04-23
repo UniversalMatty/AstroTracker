@@ -39,50 +39,39 @@ def calculate_houses(date_str, time_str, longitude, latitude, fixed_ascendant=No
             
             observer.date = dt.strftime("%Y/%m/%d %H:%M:%S")
             
-            # Calculate Ascendant using PyEphem's built-in methods
-            # PyEphem observer already has the location and time information
+            # Calculate Ascendant using PyEphem
+            # Create a fixed body to represent the ascendant
+            # In astronomical terms, the ascendant is the point on the ecliptic
+            # that is rising on the eastern horizon at a given time and location
             
-            # Get the ecliptic coordinates of the eastern point of the horizon
-            # This is the actual mathematical definition of the ascendant
-            # Formula is based on converting horizontal coordinates (alt=0, az=90)
-            # to ecliptic coordinates with the current sidereal time and observer location
-            
-            # Use PyEphem's observer to get local sidereal time (LST)
+            # We'll use a direct calculation approach for the ascendant using the sidereal time
+
+            # Get local sidereal time from observer
             sidereal_time = observer.sidereal_time()
             
-            # The exact calculation of the ascendant requires a transformation
-            # from horizontal to ecliptic coordinates
-            # We can use the equation of the ascendant directly
-            
-            # Step 1: Calculate RAMC (Right Ascension of the Medium Coeli)
-            # RAMC is equal to the local sidereal time
+            # The standard formula for converting sidereal time to ascendant:
+            # First, calculate RAMC (Right Ascension of Medium Coeli)
             RAMC = sidereal_time
             
-            # Step 2: Calculate the obliquity of the ecliptic
-            # The angle between the Earth's equator and the ecliptic
-            # This changes slightly over time, but we can use PyEphem's value from the Sun
-            sun = ephem.Sun()
-            sun.compute(observer)
-            ecl = ephem.Ecliptic(sun.ra, sun.dec)
-            obliquity = ephem.Ecliptic.get_epsilon(observer.date)
+            # Standard obliquity of the ecliptic - average value as of J2000.0
+            # This is approximately 23.4 degrees or about 0.4 radians
+            # We need a fixed value that works with PyEphem
+            obliquity = math.radians(23.4392911)  # Standard value for J2000
             
-            # Step 3: Calculate the ascendant using spherical trigonometry
-            # The exact formula for calculating the tropical ascendant:
-            latitude_rad = float(observer.lat)
+            # Convert observer's geographical latitude to radians
+            latitude_rad = float(observer.lat)  # PyEphem stores lat in radians
             
-            # Formula: tan(asc) = -cos(RAMC) / (sin(RAMC) * cos(obliquity) + tan(latitude) * sin(obliquity))
-            cos_RAMC = math.cos(RAMC)
-            sin_RAMC = math.sin(RAMC)
-            cos_obliquity = math.cos(obliquity)
-            sin_obliquity = math.sin(obliquity)
-            tan_latitude = math.tan(latitude_rad)
+            # Calculate ascendant using spherical trigonometry formula
+            # The ascendant formula: tan(asc) = -cos(RAMC) / (sin(RAMC) * cos(obl) + tan(lat) * sin(obl))
+            num = -math.cos(RAMC)
+            den = (math.sin(RAMC) * math.cos(obliquity) + 
+                  math.tan(latitude_rad) * math.sin(obliquity))
             
-            num = -cos_RAMC
-            den = sin_RAMC * cos_obliquity + tan_latitude * sin_obliquity
-            ascendant_rad = math.atan2(num, den)
+            # Use atan2 to get the correct quadrant
+            asc_lon = math.atan2(num, den)
             
-            # Convert to degrees
-            ascendant_tropical = math.degrees(ascendant_rad) % 360
+            # Convert to degrees and normalize to 0-360 range
+            ascendant_tropical = math.degrees(asc_lon) % 360
             
             # Calculate the Lahiri ayanamsa dynamically for the birth date
             dynamic_ayanamsa = calculate_lahiri_ayanamsa(date_str)
