@@ -39,22 +39,50 @@ def calculate_houses(date_str, time_str, longitude, latitude, fixed_ascendant=No
             
             observer.date = dt.strftime("%Y/%m/%d %H:%M:%S")
             
-            # Calculate Ascendant
-            # Use proper method to calculate the Ascendant
-            # We need to calculate the sidereal time and the obliquity of the ecliptic
+            # Calculate Ascendant using PyEphem's built-in methods
+            # PyEphem observer already has the location and time information
             
-            # Get the current sidereal time
+            # Get the ecliptic coordinates of the eastern point of the horizon
+            # This is the actual mathematical definition of the ascendant
+            # Formula is based on converting horizontal coordinates (alt=0, az=90)
+            # to ecliptic coordinates with the current sidereal time and observer location
+            
+            # Use PyEphem's observer to get local sidereal time (LST)
             sidereal_time = observer.sidereal_time()
             
-            # Calculate the Ascendant (Tropical)
-            # In astronomy, the ascendant is where the ecliptic intersects with the eastern horizon
-            # The formula: Ascendant = sidereal_time - right ascension of the sun
+            # The exact calculation of the ascendant requires a transformation
+            # from horizontal to ecliptic coordinates
+            # We can use the equation of the ascendant directly
+            
+            # Step 1: Calculate RAMC (Right Ascension of the Medium Coeli)
+            # RAMC is equal to the local sidereal time
+            RAMC = sidereal_time
+            
+            # Step 2: Calculate the obliquity of the ecliptic
+            # The angle between the Earth's equator and the ecliptic
+            # This changes slightly over time, but we can use PyEphem's value from the Sun
             sun = ephem.Sun()
             sun.compute(observer)
+            ecl = ephem.Ecliptic(sun.ra, sun.dec)
+            obliquity = ephem.Ecliptic.get_epsilon(observer.date)
             
-            # Calculate ascendant longitude (tropical)
-            ascendant_tropical = math.degrees(sidereal_time) * 15 - 90  # Convert hours to degrees
-            ascendant_tropical = ascendant_tropical % 360
+            # Step 3: Calculate the ascendant using spherical trigonometry
+            # The exact formula for calculating the tropical ascendant:
+            latitude_rad = float(observer.lat)
+            
+            # Formula: tan(asc) = -cos(RAMC) / (sin(RAMC) * cos(obliquity) + tan(latitude) * sin(obliquity))
+            cos_RAMC = math.cos(RAMC)
+            sin_RAMC = math.sin(RAMC)
+            cos_obliquity = math.cos(obliquity)
+            sin_obliquity = math.sin(obliquity)
+            tan_latitude = math.tan(latitude_rad)
+            
+            num = -cos_RAMC
+            den = sin_RAMC * cos_obliquity + tan_latitude * sin_obliquity
+            ascendant_rad = math.atan2(num, den)
+            
+            # Convert to degrees
+            ascendant_tropical = math.degrees(ascendant_rad) % 360
             
             # Calculate the Lahiri ayanamsa dynamically for the birth date
             dynamic_ayanamsa = calculate_lahiri_ayanamsa(date_str)
@@ -62,6 +90,8 @@ def calculate_houses(date_str, time_str, longitude, latitude, fixed_ascendant=No
             
             # Convert to Sidereal Ascendant by applying the calculated Ayanamsa
             ascendant_sidereal = (ascendant_tropical - dynamic_ayanamsa) % 360
+            
+            logging.debug(f"Calculated ascendant: tropical = {ascendant_tropical:.5f}°, sidereal = {ascendant_sidereal:.5f}°")
         
         # Get the sign of the Ascendant
         ascendant_sign = get_zodiac_sign(ascendant_sidereal)
