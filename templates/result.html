@@ -161,7 +161,7 @@
         </div>
         
         <!-- Store planet data for chart.js -->
-        <div id="planets-data" data-planets="{{ planets|tojson }}" style="display:none;"></div>
+        <div id="planets-data" data-planets="{{ planets|tojson|safe }}" style="display:none;"></div>
         
         <div class="text-center mt-4 mb-5">
             <a href="{{ url_for('index') }}" class="btn btn-outline-primary">
