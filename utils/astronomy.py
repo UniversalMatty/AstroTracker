@@ -233,6 +233,53 @@ def calculate_planet_positions(date_str, time_str, longitude, latitude, ephemeri
                 'sign': get_zodiac_sign(longitude),
                 'retrograde': retrograde
             })
+            
+        # Calculate North Node (Rahu) and South Node (Ketu)
+        try:
+            # We can access moon orbital elements to get the North Node position
+            # The mean ascending node of the Moon's orbit is needed for Rahu
+            # Reference: http://www.stjarnhimlen.se/comp/ppcomp.html#19
+            
+            # Get the current Julian date
+            jd = ephem.julian_date(observer.date)
+            
+            # Calculate the position of the Moon's mean ascending node
+            # Simplified formula from astronomical algorithms
+            # Mean ecliptic longitude of ascending node: 
+            T = (jd - 2451545.0) / 36525.0  # Julian centuries since J2000
+            # Mean ecliptic longitude of ascending node (degrees)
+            N = 125.04452 - 1934.136261 * T + 0.0020708 * T**2 + T**3 / 450000.0
+            # Normalize to 0-360 degrees
+            N = N % 360
+            
+            # Convert to sidereal by applying ayanamsa
+            rahu_longitude = (N - dynamic_ayanamsa) % 360
+            
+            # Ketu (South Node) is always 180° opposite to Rahu
+            ketu_longitude = (rahu_longitude + 180) % 360
+            
+            # Add Rahu and Ketu to the results
+            planets_data.append({
+                'name': 'Rahu',
+                'longitude': rahu_longitude,
+                'formatted_position': format_longitude(rahu_longitude),
+                'sign': get_zodiac_sign(rahu_longitude),
+                'retrograde': True  # Nodes are traditionally considered retrograde
+            })
+            
+            planets_data.append({
+                'name': 'Ketu',
+                'longitude': ketu_longitude,
+                'formatted_position': format_longitude(ketu_longitude),
+                'sign': get_zodiac_sign(ketu_longitude),
+                'retrograde': True  # Nodes are traditionally considered retrograde
+            })
+            
+            logging.debug(f"Calculated Rahu at {rahu_longitude} degrees ({get_zodiac_sign(rahu_longitude)})")
+            logging.debug(f"Calculated Ketu at {ketu_longitude} degrees ({get_zodiac_sign(ketu_longitude)})")
+            
+        except Exception as e:
+            logging.error(f"Error calculating lunar nodes: {str(e)}")
         
         return planets_data
         
