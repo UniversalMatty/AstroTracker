@@ -18,8 +18,10 @@ PLANETS = {
 }
 
 # Ayanamsa (precession correction) for sidereal calculations
-# Using Lahiri ayanamsa as a default (approximately 24 degrees in current era)
-AYANAMSA = 24.0
+# Using Lahiri ayanamsa as a default
+# The value changes slightly each year (about 1 degree every 72 years)
+# For 1990s-2020s, it's approximately 23.85 degrees (as of 2023)
+AYANAMSA = 23.85  # Lahiri Ayanamsa for current era
 
 def degrees_to_dms(degrees):
     """Convert decimal degrees to degrees, minutes, seconds format"""
@@ -88,11 +90,34 @@ def calculate_planet_positions(date_str, time_str, longitude, latitude, ephemeri
                 # Calculate using PyEphem
                 planet_obj.compute(observer)
                 
-                # Get longitude in degrees
-                longitude = math.degrees(planet_obj.hlon)
+                # Get longitude in degrees - use ecliptic longitude (lon) instead of hlon
+                # hlon is not a standard attribute in ephem objects
+                logging.debug(f"Calculating position for: {planet_name}")
+                
+                # Check available attributes on the planet object
+                if hasattr(planet_obj, 'a_ra'):
+                    ra = planet_obj.a_ra
+                    logging.debug(f"{planet_name} a_ra: {math.degrees(ra)}")
+                if hasattr(planet_obj, 'g_ra'):
+                    ra = planet_obj.g_ra
+                    logging.debug(f"{planet_name} g_ra: {math.degrees(ra)}")
+                if hasattr(planet_obj, 'ra'):
+                    ra = planet_obj.ra
+                    logging.debug(f"{planet_name} ra: {math.degrees(ra)}")
+                
+                # Get ecliptic longitude from equatorial coordinates
+                # PyEphem doesn't directly provide ecliptic longitude for planets
+                # We need to convert from right ascension (RA) and declination to ecliptic longitude
+                
+                # Convert equatorial coordinates to ecliptic
+                ecl = ephem.Ecliptic(planet_obj.ra, planet_obj.dec)
+                longitude = math.degrees(ecl.lon)
+                logging.debug(f"{planet_name} ecliptic longitude (raw): {longitude}")
                 
                 # Adjust for sidereal calculation by subtracting ayanamsa
-                longitude = (longitude - AYANAMSA) % 360
+                sidereal_longitude = (longitude - AYANAMSA) % 360
+                logging.debug(f"{planet_name} tropical: {longitude}, sidereal: {sidereal_longitude}, sign: {get_zodiac_sign(sidereal_longitude)}")
+                longitude = sidereal_longitude
                 
                 # Determine if planet is retrograde (except Sun and Moon)
                 retrograde = False
@@ -101,18 +126,32 @@ def calculate_planet_positions(date_str, time_str, longitude, latitude, ephemeri
                     observer_tomorrow = ephem.Observer()
                     observer_tomorrow.lon = observer.lon
                     observer_tomorrow.lat = observer.lat
-                    observer_tomorrow.date = ephem.Date(observer.date + 1)
+                    
+                    # Add one day to the current date
+                    current_date = ephem.Date(observer.date)
+                    observer_tomorrow.date = ephem.Date(current_date + 1)
                     
                     planet_obj_copy = getattr(ephem, planet_name)()
                     planet_obj_copy.compute(observer_tomorrow)
-                    longitude_tomorrow = math.degrees(planet_obj_copy.hlon)
+                    
+                    # Get tomorrow's longitude using the same method as current day
+                    # Convert equatorial coordinates to ecliptic
+                    ecl_tomorrow = ephem.Ecliptic(planet_obj_copy.ra, planet_obj_copy.dec)
+                    tomorrow_longitude = math.degrees(ecl_tomorrow.lon)
+                    logging.debug(f"{planet_name} tomorrow's ecliptic longitude (raw): {tomorrow_longitude}")
+                    
+                    # Apply sidereal correction
+                    tomorrow_longitude = (tomorrow_longitude - AYANAMSA) % 360
+                    
+                    logging.debug(f"{planet_name} tomorrow: {tomorrow_longitude}, today: {longitude}")
                     
                     # If longitude tomorrow is less than today (accounting for 0/360 boundary)
-                    if (longitude_tomorrow < longitude and 
-                        abs(longitude_tomorrow - longitude) < 180) or \
-                       (longitude_tomorrow > longitude and 
-                        abs(longitude_tomorrow - longitude) > 180):
+                    if (tomorrow_longitude < longitude and 
+                        abs(tomorrow_longitude - longitude) < 180) or \
+                       (tomorrow_longitude > longitude and 
+                        abs(tomorrow_longitude - longitude) > 180):
                         retrograde = True
+                        logging.debug(f"{planet_name} is RETROGRADE")
             
             # Format the data
             planets_data.append({
