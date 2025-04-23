@@ -71,9 +71,10 @@ def calculate():
         # Calculate houses and get ascendant
         houses = calculate_houses(dob_date, dob_time, longitude, latitude)
         
-        # Get the ascendant from the first house
+        # Get the ascendant from the first house (with exact degree)
         ascendant_sign = houses[0]['sign']
-        ascendant_longitude = houses[0]['cusp_longitude'] 
+        ascendant_longitude = houses[0]['ascendant_longitude']  # Use actual ascendant longitude
+        ascendant_degree = ascendant_longitude % 30  # Get the degree within the sign
         
         # Create an ascendant "planet" entry and insert it after the Sun in the planets list
         sun_index = next((i for i, p in enumerate(planets) if p['name'] == 'Sun'), -1)
@@ -81,7 +82,7 @@ def calculate():
         ascendant_entry = {
             'name': 'Ascendant',
             'longitude': ascendant_longitude,
-            'formatted_position': f"{ascendant_sign} 0°",
+            'formatted_position': f"{ascendant_sign} {ascendant_degree:.2f}°",
             'sign': ascendant_sign,
             'retrograde': False
         }
@@ -227,9 +228,10 @@ def view_chart(chart_id):
         chart.latitude
     )
     
-    # Get the ascendant from the first house
+    # Get the ascendant from the first house (with exact degree)
     ascendant_sign = houses[0]['sign']
-    ascendant_longitude = houses[0]['cusp_longitude']
+    ascendant_longitude = houses[0]['ascendant_longitude']  # Use actual ascendant longitude
+    ascendant_degree = ascendant_longitude % 30  # Get the degree within the sign
     
     # Create an ascendant "planet" entry and insert it after the Sun in the planets list
     sun_index = next((i for i, p in enumerate(planets) if p['name'] == 'Sun'), -1)
@@ -237,7 +239,7 @@ def view_chart(chart_id):
     ascendant_entry = {
         'name': 'Ascendant',
         'longitude': ascendant_longitude,
-        'formatted_position': f"{ascendant_sign} 0°",
+        'formatted_position': f"{ascendant_sign} {ascendant_degree:.2f}°",
         'sign': ascendant_sign,
         'retrograde': False,
         'nakshatra': get_nakshatra(ascendant_longitude)

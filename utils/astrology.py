@@ -117,12 +117,22 @@ def calculate_houses(date_str, time_str, longitude, latitude, fixed_ascendant=No
             # In whole sign system, house cusp is the beginning of the sign
             cusp_longitude = sign_index * 30
             
-            houses.append({
-                'house_number': house_number,
-                'sign': sign,
-                'cusp_longitude': cusp_longitude,
-                'formatted_position': f"{sign} 0°"
-            })
+            # For the first house (house_number = 1), add the exact ascendant longitude
+            if house_number == 1:
+                houses.append({
+                    'house_number': house_number,
+                    'sign': sign,
+                    'cusp_longitude': cusp_longitude,
+                    'ascendant_longitude': ascendant_sidereal,  # Exact ascendant position
+                    'formatted_position': f"{sign} 0°"
+                })
+            else:
+                houses.append({
+                    'house_number': house_number,
+                    'sign': sign,
+                    'cusp_longitude': cusp_longitude,
+                    'formatted_position': f"{sign} 0°"
+                })
         
         return houses
         
