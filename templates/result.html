@@ -90,7 +90,7 @@
             </div>
             <div class="card-body">
                 <p class="mb-4">
-                    In the whole sign house system, each house occupies exactly one sign. The sign that contains the ascendant becomes the 1st house, and subsequent signs become the subsequent houses.
+                    In the whole sign house system, each house occupies exactly one sign. The sign that contains the ascendant becomes the 1st house, and subsequent signs become the subsequent houses. While each house corresponds to one full sign, the ascendant (lagna) itself can be at any degree within its sign.
                 </p>
                 
                 <div class="row row-cols-1 row-cols-md-3 g-4 house-grid">
@@ -98,7 +98,11 @@
                     <div class="col">
                         <div class="card house-card h-100">
                             <div class="card-header bg-dark">
+                                {% if house.house_number == 1 %}
+                                House {{ house.house_number }} - {{ house.sign }} (Ascendant at {{ house.ascendant_degree|round(2) }}°)
+                                {% else %}
                                 House {{ house.house_number }} - {{ house.sign }}
+                                {% endif %}
                             </div>
                             <div class="card-body">
                                 <p class="card-text">

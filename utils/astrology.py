@@ -38,18 +38,19 @@ def calculate_houses(date_str, time_str, longitude, latitude, fixed_ascendant=No
                 # Ensure the ayanamsa mode is set to Krishnamurti
                 swe.set_sid_mode(swe.SIDM_KRISHNAMURTI)
                 
-                # Calculate houses and ascendant using Swiss Ephemeris
+                # Calculate houses and ascendant using Swiss Ephemeris with Placidus system
+                # for accurate ascendant (lagna) position
                 houses_cusps, ascmc = swe.houses(jd_ut, latitude, longitude, b'P')
                 
-                # The Ascendant is the first element of ascmc
+                # The Ascendant is the first element of ascmc (tropical)
                 ascendant_tropical = ascmc[0] 
                 logging.debug(f"Swiss Ephemeris raw ascendant (tropical): {ascendant_tropical}")
                 
-                # For sidereal calculation, we're already in Krishnamurti mode, so we can get ayanamsa
+                # For sidereal calculation, we get ayanamsa value
                 ayanamsa = swe.get_ayanamsa(jd_ut)
                 logging.debug(f"Swiss Ephemeris Krishnamurti ayanamsa: {ayanamsa}")
                 
-                # Get sidereal ascendant by subtracting ayanamsa
+                # Convert tropical ascendant to sidereal by subtracting ayanamsa
                 ascendant_sidereal = (ascendant_tropical - ayanamsa) % 360
                 
                 # Format for debugging
@@ -107,41 +108,59 @@ def calculate_houses(date_str, time_str, longitude, latitude, fixed_ascendant=No
                 
                 logging.debug(f"PyEphem calculated ascendant: tropical = {ascendant_tropical:.5f}° ({get_zodiac_sign(ascendant_tropical)}), sidereal = {ascendant_sidereal:.5f}° ({get_zodiac_sign(ascendant_sidereal)})")
         
-        # Get the sign of the Ascendant (1st house)
+        # Display accurate ascendant degree in the result
         ascendant_sign = get_zodiac_sign(ascendant_sidereal)
-        ascendant_sign_index = ["Aries", "Taurus", "Gemini", "Cancer", 
-                               "Leo", "Virgo", "Libra", "Scorpio", 
-                               "Sagittarius", "Capricorn", "Aquarius", "Pisces"].index(ascendant_sign)
+        ascendant_degree = ascendant_sidereal % 30
+        ascendant_display = f"{ascendant_sign} {ascendant_degree:.2f}°"
+        
+        # Create zodiac signs list for reference
+        signs = ["Aries", "Taurus", "Gemini", "Cancer", 
+                 "Leo", "Virgo", "Libra", "Scorpio", 
+                 "Sagittarius", "Capricorn", "Aquarius", "Pisces"]
+        
+        # Get the sign index of the Ascendant (1st house)
+        # For whole sign house system, we use the sign of the ascendant as the 1st house
+        ascendant_sign_index = signs.index(ascendant_sign)
         
         # In whole sign system, each house corresponds to one sign
         houses = []
         for i in range(12):
             house_number = i + 1
             sign_index = (ascendant_sign_index + i) % 12
-            signs = ["Aries", "Taurus", "Gemini", "Cancer", 
-                     "Leo", "Virgo", "Libra", "Scorpio", 
-                     "Sagittarius", "Capricorn", "Aquarius", "Pisces"]
             sign = signs[sign_index]
             
             # In whole sign system, house cusp is the beginning of the sign
             cusp_longitude = sign_index * 30
             
-            # For the first house (house_number = 1), add the exact ascendant longitude
+            # For the first house (house_number = 1), add the exact ascendant longitude and display
             if house_number == 1:
                 houses.append({
                     'house_number': house_number,
                     'sign': sign,
                     'cusp_longitude': cusp_longitude,
                     'ascendant_longitude': ascendant_sidereal,  # Exact ascendant position
-                    'formatted_position': f"{sign} 0°"
+                    'ascendant_degree': ascendant_degree,  # Degree within sign
+                    'formatted_position': f"{sign} (Ascendant at {ascendant_degree:.2f}°)"
                 })
             else:
                 houses.append({
                     'house_number': house_number,
                     'sign': sign,
                     'cusp_longitude': cusp_longitude,
-                    'formatted_position': f"{sign} 0°"
+                    'formatted_position': f"{sign}"
                 })
+        
+        # Add overall ascendant information for easy access
+        ascendant_info = {
+            'longitude': ascendant_sidereal,
+            'sign': ascendant_sign,
+            'degree': ascendant_degree,
+            'formatted': ascendant_display
+        }
+        
+        # Log the final house arrangement
+        logging.debug(f"Ascendant: {ascendant_display}")
+        logging.debug(f"House 1: {houses[0]['formatted_position']}")
         
         return houses
         
