@@ -39,39 +39,41 @@ def calculate_houses(date_str, time_str, longitude, latitude, fixed_ascendant=No
             
             observer.date = dt.strftime("%Y/%m/%d %H:%M:%S")
             
-            # Calculate Ascendant using PyEphem
-            # Create a fixed body to represent the ascendant
-            # In astronomical terms, the ascendant is the point on the ecliptic
-            # that is rising on the eastern horizon at a given time and location
+            # Calculate the Ascendant directly using PyEphem's built-in methods
+            # The Ascendant is the zodiac degree rising on the eastern horizon
             
-            # We'll use a direct calculation approach for the ascendant using the sidereal time
-
-            # Get local sidereal time from observer
-            sidereal_time = observer.sidereal_time()
+            # Create a body representing the ecliptic point exactly on the eastern horizon
+            # First, set up an azimuthal point at the eastern horizon (azimuth = 90°)
+            body = ephem.FixedBody()
+            body._ra = 0  # Initial RA value, will be replaced
+            body._dec = 0  # Initial Dec value, will be replaced
+            body._epoch = observer.date  # Set the epoch to match observer time
             
-            # The standard formula for converting sidereal time to ascendant:
-            # First, calculate RAMC (Right Ascension of Medium Coeli)
-            RAMC = sidereal_time
+            # Create a horizon object with Az=90° (due East) and Alt=0° (on horizon)
+            # In horizontal coordinates, azimuth 90° corresponds to East
+            az = math.pi/2  # 90 degrees in radians (East)
+            alt = 0.0  # 0 degrees altitude (on horizon)
             
-            # Standard obliquity of the ecliptic - average value as of J2000.0
-            # This is approximately 23.4 degrees or about 0.4 radians
-            # We need a fixed value that works with PyEphem
-            obliquity = math.radians(23.4392911)  # Standard value for J2000
+            # Convert horizontal coordinates to equatorial
+            ra, dec = observer.radec_of(az, alt)
             
-            # Convert observer's geographical latitude to radians
-            latitude_rad = float(observer.lat)  # PyEphem stores lat in radians
+            # Set the body's coordinates
+            body._ra = ra
+            body._dec = dec
             
-            # Calculate ascendant using spherical trigonometry formula
-            # The ascendant formula: tan(asc) = -cos(RAMC) / (sin(RAMC) * cos(obl) + tan(lat) * sin(obl))
-            num = -math.cos(RAMC)
-            den = (math.sin(RAMC) * math.cos(obliquity) + 
-                  math.tan(latitude_rad) * math.sin(obliquity))
+            # Compute the body
+            body.compute(observer)
             
-            # Use atan2 to get the correct quadrant
-            asc_lon = math.atan2(num, den)
+            # Now convert to ecliptic coordinates to get the longitude
+            # This gives us the point on the ecliptic that is rising
+            ecl = ephem.Ecliptic(body)
             
-            # Convert to degrees and normalize to 0-360 range
-            ascendant_tropical = math.degrees(asc_lon) % 360
+            # Get the ecliptic longitude in degrees
+            ascendant_tropical = math.degrees(ecl.lon) % 360
+            
+            logging.debug(f"Raw ascendant calculation: azimuth={math.degrees(az)}, altitude={math.degrees(alt)}")
+            logging.debug(f"Equatorial coordinates: RA={math.degrees(ra)}, Dec={math.degrees(dec)}")
+            logging.debug(f"Ecliptic longitude (tropical): {ascendant_tropical}")
             
             # Calculate the Lahiri ayanamsa dynamically for the birth date
             dynamic_ayanamsa = calculate_lahiri_ayanamsa(date_str)
