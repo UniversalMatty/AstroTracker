@@ -42,11 +42,14 @@ def calculate_houses(date_str, time_str, longitude, latitude, fixed_ascendant=No
                 ascendant_tropical = ascmc[0]
                 logging.debug(f"Swiss Ephemeris raw ascendant (tropical): {ascendant_tropical}")
                 
-                # Apply Lahiri ayanamsa using Swiss Ephemeris
-                ayanamsa = swe.get_ayanamsa(jd_ut)
-                logging.debug(f"Swiss Ephemeris Lahiri ayanamsa: {ayanamsa}")
+                # Set Krishnamurti ayanamsa mode (5) before getting ayanamsa value
+                swe.set_sid_mode(5)  # 5 is the constant for Krishnamurti ayanamsa
                 
-                # Calculate sidereal ascendant
+                # Get ayanamsa value using Krishnamurti ayanamsa
+                ayanamsa = swe.get_ayanamsa(jd_ut)
+                logging.debug(f"Swiss Ephemeris Krishnamurti ayanamsa: {ayanamsa}")
+                
+                # Calculate sidereal ascendant using Krishnamurti ayanamsa
                 ascendant_sidereal = (ascendant_tropical - ayanamsa) % 360
                 
                 logging.debug(f"Swiss Ephemeris calculated ascendant: tropical = {ascendant_tropical:.5f}° ({swe_get_zodiac_sign(ascendant_tropical)}), sidereal = {ascendant_sidereal:.5f}° ({swe_get_zodiac_sign(ascendant_sidereal)})")
@@ -89,12 +92,13 @@ def calculate_houses(date_str, time_str, longitude, latitude, fixed_ascendant=No
                 ecl = ephem.Ecliptic(body)
                 ascendant_tropical = math.degrees(ecl.lon) % 360
                 
-                # Calculate dynamic ayanamsa
-                dynamic_ayanamsa = calculate_lahiri_ayanamsa(date_str)
-                logging.debug(f"PyEphem Lahiri ayanamsa: {dynamic_ayanamsa}")
+                # We need to use the Krishnamurti ayanamsa for consistency
+                # This is approximately 23.86° (current value) instead of the Lahiri ayanamsa
+                krishnamurti_ayanamsa = 23.86  # Fixed value for Krishnamurti ayanamsa
+                logging.debug(f"Using Krishnamurti ayanamsa for PyEphem fallback: {krishnamurti_ayanamsa}")
                 
-                # Convert to sidereal
-                ascendant_sidereal = (ascendant_tropical - dynamic_ayanamsa) % 360
+                # Convert to sidereal using Krishnamurti ayanamsa
+                ascendant_sidereal = (ascendant_tropical - krishnamurti_ayanamsa) % 360
                 
                 logging.debug(f"PyEphem calculated ascendant: tropical = {ascendant_tropical:.5f}° ({get_zodiac_sign(ascendant_tropical)}), sidereal = {ascendant_sidereal:.5f}° ({get_zodiac_sign(ascendant_sidereal)})")
         
