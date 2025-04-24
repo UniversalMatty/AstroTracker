@@ -739,18 +739,10 @@ def calculate():
             # Get house meanings
             house_meanings = get_house_meanings()
             
-            # Add meanings to houses
-            for house in houses:
-                house["meaning"] = get_house_meaning(house["house"], house["sign"])
-            
             # Add ascendant interpretation
             ascendant_position['description'] = get_ascendant_interpretation(ascendant_position['sign'])
             
-            # Create the house_data structure that the rest of the code expects
-            house_data = {
-                'ascendant': ascendant_position,
-                'houses': houses
-            }
+            # REMOVE the creation of house_data structure - we'll do it AFTER our direct calculation
             
             logging.warning(f"⚠️ COMPLETELY NEW APPROACH - Calculating houses directly inside app.py")
             
@@ -814,6 +806,15 @@ def calculate():
             # Add meanings to houses
             for house in houses:
                 house["meaning"] = get_house_meaning(house["house"], house["sign"])
+                
+            # NOW create the house_data structure AFTER our direct calculation
+            # This ensures we're using our manually calculated houses
+            house_data = {
+                'ascendant': ascendant_position,
+                'houses': houses  # Our directly calculated houses, not Kerykeion's
+            }
+            
+            logging.warning(f"CREATED house_data with our directly calculated houses. House 1: {houses[0]['sign']}")
                 
             # Check if we want to replace planet calculations from Kerykeion too
             # If planets were already calculated correctly, we'll keep them
