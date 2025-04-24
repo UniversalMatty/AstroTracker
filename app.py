@@ -752,17 +752,13 @@ def calculate():
                 'houses': houses
             }
             
-            # Always calculate houses based on the selected house system
-            # DO NOT use the Kerykeion houses directly
-            if house_system.lower() == 'equal':
-                houses = calculate_equal_houses(ascendant_position)
-            else:  # Default to whole_sign
-                houses = calculate_whole_sign_houses(ascendant_position)
+            # Use our simple house calculation - Whole Sign only
+            from utils.position_interpretations import calculate_simple_houses
+            houses = calculate_simple_houses(ascendant_position['sign'])
             
-            # Add the house system info to each house
-            house_system_display = "Equal Houses" if house_system.lower() == 'equal' else "Whole Sign"
+            # Set house system to Whole Sign
             for house in houses:
-                house["system"] = house_system_display
+                house["system"] = "Whole Sign"
             
             # Log house data to debug
             logging.debug(f"HOUSE SYSTEM SELECTED: {house_system}")
@@ -790,11 +786,9 @@ def calculate():
             # Add ascendant interpretation
             ascendant_position['description'] = get_ascendant_interpretation(ascendant_position['sign'])
             
-            # Calculate houses using selected house system
-            if house_system.lower() == 'equal':
-                houses = calculate_equal_houses(ascendant_position)
-            else:
-                houses = calculate_whole_sign_houses(ascendant_position)
+            # Use our simple house calculation
+            from utils.position_interpretations import calculate_simple_houses
+            houses = calculate_simple_houses(ascendant_position['sign'])
             
             # Get house meanings
             house_meanings = get_house_meanings()
@@ -1018,8 +1012,9 @@ def view_chart(chart_id):
             # Log calculation details
             logging.debug(f"Ascendant: {ascendant_position['formatted']} (Kerykeion calculation in view_chart)")
             
-            # Calculate houses using our own whole_sign implementation
-            houses = calculate_whole_sign_houses(ascendant_position)
+            # Calculate houses using our new simple calculation
+            from utils.position_interpretations import calculate_simple_houses
+            houses = calculate_simple_houses(ascendant_position['sign'])
             
             # Get house meanings
             house_meanings = get_house_meanings()
@@ -1038,8 +1033,9 @@ def view_chart(chart_id):
             ascendant_position = format_position(sidereal_asc)
             logging.warning(f"Using emergency fallback ascendant in view_chart: {ascendant_position['formatted']}")
             
-            # Calculate houses using Whole Sign system with our original method
-            houses = calculate_whole_sign_houses(ascendant_position)
+            # Calculate houses using simple formula
+            from utils.position_interpretations import calculate_simple_houses
+            houses = calculate_simple_houses(ascendant_position['sign'])
             
             # Get house meanings
             house_meanings = get_house_meanings()

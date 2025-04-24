@@ -110,7 +110,35 @@
             </div>
         </div>
         
-        <!-- House Cusps Section removed as requested -->
+        <!-- House Cusps Section -->
+        <div class="card mb-4">
+            <div class="card-header bg-secondary text-white">
+                <h3 class="mb-0">House Cusps (Whole Sign System)</h3>
+            </div>
+            <div class="card-body">
+                <p class="mb-4">
+                    Below are the house cusps based on the Whole Sign system, where the sign containing your Ascendant becomes the 1st house,
+                    and each subsequent sign becomes the next house. Each house represents a specific area of life.
+                </p>
+                
+                <div class="row row-cols-1 row-cols-md-3 g-4">
+                    {% for house in houses %}
+                    <div class="col">
+                        <div class="card house-card h-100">
+                            <div class="card-header bg-dark">
+                                House {{ house.house }}: <span class="sign-{{ house.sign.lower() }}">{{ house.sign }}</span>
+                            </div>
+                            <div class="card-body">
+                                <p class="card-text">
+                                    {{ house.meaning }}
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
         
         <!-- Planet Descriptions Section -->
         <div class="card mb-4">
