@@ -1,9 +1,10 @@
-import os
 import logging
 import math
+import os
+import re
 import traceback
 from datetime import datetime, date
-from flask import Flask, render_template, request, redirect, url_for, flash, session, jsonify, Response
+from flask import Flask, render_template, request, redirect, url_for, flash, session, jsonify, Response, make_response
 from werkzeug.utils import secure_filename
 import tempfile
 import json
@@ -893,45 +894,60 @@ def view_chart(chart_id):
         calculation_method='Skyfield (High Precision)'
     )
 
-@app.route('/export_chart_json', methods=['GET'])
-def export_chart_json():
-    """Export the current chart data as JSON file"""
+@app.route('/export_chart_pdf', methods=['GET'])
+def export_chart_pdf():
+    """Export the current chart data as PDF file"""
     try:
         # Get data from session
         if 'planets' not in session or 'birth_details' not in session:
             flash('No chart data available to export. Please calculate a chart first.', 'warning')
             return redirect(url_for('index'))
             
-        # Create a complete chart object
-        chart_data = {
-            'birth_details': session['birth_details'],
-            'planets': session['planets'],
-            'ascendant': session.get('ascendant'),
-            'houses': session.get('houses'),
-            'generated_at': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
-            'calculation_method': 'Sidereal (Lahiri Ayanamsa)'
-        }
+        # Get chart data from session
+        birth_details = session['birth_details']
+        planets = session['planets']
+        ascendant = session.get('ascendant')
+        houses = session.get('houses')
         
-        # Function to handle datetime objects for JSON serialization
-        def json_serial(obj):
-            """JSON serializer for objects not serializable by default json code"""
-            if isinstance(obj, (datetime, date)):
-                return obj.isoformat()
-            raise TypeError(f"Type {type(obj)} not serializable")
+        # Make sure the ascendant has a description
+        if ascendant and 'description' not in ascendant:
+            ascendant['description'] = get_ascendant_interpretation(ascendant['sign'])
         
-        # Create the JSON response
-        response = Response(
-            json.dumps(chart_data, indent=2, default=json_serial),
-            mimetype='application/json',
-            headers={
-                'Content-Disposition': f'attachment;filename=birth_chart_{session["birth_details"]["date"].replace("-", "")}.json'
-            }
+        # Make sure all planets have descriptions
+        for planet in planets:
+            if 'description' not in planet:
+                planet['description'] = get_planet_in_sign_interpretation(planet['name'], planet['sign'])
+        
+        # Render PDF template
+        from flask_weasyprint import HTML, render_pdf
+        import re
+        
+        html = render_template(
+            'chart_pdf.html',
+            birth_details=birth_details,
+            planets=planets,
+            ascendant=ascendant,
+            houses=houses,
+            notes=""  # No notes for direct export
         )
+        
+        # Generate PDF using WeasyPrint
+        pdf = render_pdf(HTML(string=html))
+        
+        # Create a safe filename
+        safe_name = re.sub(r'[^\w\s-]', '', birth_details["name"])  # Remove special chars
+        safe_name = re.sub(r'\s+', '_', safe_name).strip()  # Replace spaces with underscores
+        safe_date = birth_details["date"].replace("-", "")
+        
+        # Create response
+        response = make_response(pdf)
+        response.headers['Content-Disposition'] = f'attachment; filename=chart_{safe_name}_{safe_date}.pdf'
+        response.headers['Content-Type'] = 'application/pdf'
         
         return response
         
     except Exception as e:
-        logging.error(f"Error exporting chart as JSON: {str(e)}")
+        logging.error(f"Error exporting chart as PDF: {str(e)}")
         flash(f'Error exporting chart: {str(e)}', 'danger')
         return redirect(url_for('index'))
 
