@@ -199,8 +199,19 @@ def calculate_house_cusps(jd_ut, latitude, longitude, house_system="Equal Houses
         
         try:
             # Using standard houses calculation with the specified house system
+            logging.debug(f"Calculating houses with: jd_ut={jd_ut}, latitude={latitude}, longitude={longitude}, house_flag={house_flag}")
             houses, ascmc = swe.houses_ex(jd_ut, latitude, longitude, house_flag, 0)
-            tropical_asc = ascmc[0]  # Ascendant is first element
+            logging.debug(f"Raw houses result: {houses}")
+            logging.debug(f"Raw ascmc result: {ascmc}")
+            
+            if ascmc and len(ascmc) > 0:
+                tropical_asc = ascmc[0]  # Ascendant is first element
+                logging.debug(f"Successfully retrieved ascendant: {tropical_asc}")
+            else:
+                logging.error("ascmc array is empty or invalid!")
+                # In case of error, use a default value
+                tropical_asc = 0.0
+                logging.debug(f"Using default ascendant: {tropical_asc}")
             
             # Get ayanamsa for this date
             ayanamsa = calculate_ayanamsa(jd_ut)

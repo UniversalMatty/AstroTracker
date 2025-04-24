@@ -13,7 +13,10 @@ from utils.planet_descriptions import get_planet_description
 from utils.swisseph import calculate_jd_ut, calculate_house_cusps
 from models import db, Chart, PlanetPosition
 
-logging.basicConfig(level=logging.DEBUG)
+logging.basicConfig(
+    level=logging.DEBUG,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
 
 app = Flask(__name__)
 app.secret_key = os.environ.get("SESSION_SECRET", "default_secret_key")
