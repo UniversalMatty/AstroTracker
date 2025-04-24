@@ -539,24 +539,31 @@ def calculate():
         ayanamsa = calculate_lahiri_ayanamsa(utc_datetime)
         logging.debug(f"Ayanamsa: {ayanamsa}")
         
-        # Calculate ascendant using Swiss Ephemeris (same as planets)
+        # Calculate ascendant using Skyfield (separate from planetary positions)
         try:
-            logging.debug("About to calculate ascendant using Swiss Ephemeris...")
+            logging.debug("About to calculate ascendant using Skyfield...")
             
-            # Import Swiss Ephemeris house calculation function
-            from utils.swisseph import calculate_houses_and_ascendant
+            # Import Skyfield house calculation function
+            from utils.skyfield_ascendant import calculate_houses_and_ascendant
             
-            # Calculate using Julian Day from the same time used for planets
-            # This ensures consistency between planet and ascendant calculations
-            houses_and_ascendant = calculate_houses_and_ascendant(jd_ut, latitude, longitude)
+            # Get timezone string from coordinates
+            tz_str = get_timezone_from_coordinates(latitude, longitude)
+            
+            # Calculate houses and ascendant using Skyfield
+            houses_and_ascendant = calculate_houses_and_ascendant(date_str, time_str, latitude, longitude, tz_str)
             
             # Extract sidereal ascendant directly
             sidereal_asc = houses_and_ascendant.get('ascendant_longitude', 0.0)
             
             # Log the calculation details
-            logging.debug(f"Swiss Ephemeris sidereal ascendant: {sidereal_asc}")
-            ascendant_position = format_position(sidereal_asc)
-            logging.debug(f"Ascendant: {ascendant_position['formatted']} (Swiss Ephemeris calculation)")
+            logging.debug(f"Skyfield sidereal ascendant: {sidereal_asc}")
+            ascendant_position = {
+                'longitude': sidereal_asc,
+                'sign': houses_and_ascendant.get('ascendant_sign', ''),
+                'degree': houses_and_ascendant.get('ascendant_degree', 0.0),
+                'formatted': houses_and_ascendant.get('ascendant_formatted', '')
+            }
+            logging.debug(f"Ascendant: {ascendant_position['formatted']} (Skyfield calculation)")
             
             # Also log the tropical ascendant for debugging
             tropical_asc = houses_and_ascendant.get('tropical_ascendant', 0.0)
@@ -750,42 +757,50 @@ def view_chart(chart_id):
         # Convert to UTC
         utc_datetime = local_datetime.astimezone(pytz.UTC)
         
-        # Create Skyfield time object
-        t = ts.from_datetime(utc_datetime)
-        
-        # Create observer
-        observer = earth + Topos(latitude_degrees=chart.latitude, longitude_degrees=chart.longitude)
+        # Instead of directly creating Skyfield objects here, we'll use our 
+        # dedicated calculate_houses_and_ascendant function from skyfield_ascendant.py
         
         # Calculate ayanamsa
         ayanamsa = calculate_lahiri_ayanamsa(utc_datetime)
         
-        # Calculate ascendant using Swiss Ephemeris in view_chart
+        # Calculate ascendant using Skyfield in view_chart
         try:
-            logging.debug("About to calculate ascendant in view_chart using Swiss Ephemeris...")
+            logging.debug("About to calculate ascendant in view_chart using Skyfield...")
             
-            # Calculate Julian Day for Swiss Ephemeris
-            from utils.swisseph import calculate_jd_ut, calculate_houses_and_ascendant
+            # Import Skyfield house calculation function
+            from utils.skyfield_ascendant import calculate_houses_and_ascendant
             
-            # Get Julian Day from birth date and time
+            # Get birth date and time strings
             birth_date_str = chart.birth_date.strftime('%Y-%m-%d')
             birth_time_str = chart.birth_time.strftime('%H:%M')
-            jd_ut = calculate_jd_ut(birth_date_str, birth_time_str)
             
-            # Calculate ascendant and houses
-            houses_and_ascendant = calculate_houses_and_ascendant(jd_ut, chart.latitude, chart.longitude)
+            # Calculate houses and ascendant using Skyfield
+            houses_and_ascendant = calculate_houses_and_ascendant(
+                birth_date_str,
+                birth_time_str, 
+                chart.latitude, 
+                chart.longitude, 
+                timezone_str
+            )
             
-            # Extract sidereal ascendant
+            # Extract sidereal ascendant directly from Skyfield result
             sidereal_asc = houses_and_ascendant.get('ascendant_longitude', 0.0)
             
-            # Format the position
-            ascendant_position = format_position(sidereal_asc)
-            logging.debug(f"Ascendant: {ascendant_position['formatted']} (Swiss Ephemeris calculation)")
+            # Create formatted position object using Skyfield data
+            ascendant_position = {
+                'longitude': sidereal_asc,
+                'sign': houses_and_ascendant.get('ascendant_sign', ''),
+                'degree': houses_and_ascendant.get('ascendant_degree', 0.0),
+                'formatted': houses_and_ascendant.get('ascendant_formatted', '')
+            }
+            logging.debug(f"Ascendant: {ascendant_position['formatted']} (Skyfield calculation)")
             
             # Log details for debugging
             tropical_asc = houses_and_ascendant.get('tropical_ascendant', 0.0)
             actual_ayanamsa = houses_and_ascendant.get('ayanamsa', 0.0)
             logging.debug(f"Tropical ascendant: {tropical_asc}")
             logging.debug(f"Ayanamsa used: {actual_ayanamsa}")
+            logging.debug(f"Conversion check: {tropical_asc} - {actual_ayanamsa} = {(tropical_asc - actual_ayanamsa) % 360}")
             
         except Exception as asc_error:
             logging.error(f"DETAILED Ascendant calculation error in view_chart: {str(asc_error)}")

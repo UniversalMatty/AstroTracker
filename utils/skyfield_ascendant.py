@@ -9,6 +9,10 @@ from skyfield.api import load, Topos
 import numpy as np
 from skyfield.constants import ERAD
 
+# Initialize empty variables (will be set in the try block)
+eph = None
+ts = None
+
 # Load the ephemeris data (de440s.bsp)
 try:
     eph = load('de440s.bsp')
@@ -16,6 +20,10 @@ try:
     logging.info("Successfully loaded Skyfield ephemeris (de440s.bsp)")
 except Exception as e:
     logging.error(f"Failed to load Skyfield ephemeris: {str(e)}")
+    # Set default values that will cause failures to be handled properly
+    from skyfield.api import load
+    eph = {}
+    ts = load.timescale()
     
 def get_zodiac_sign(longitude):
     """Get zodiac sign from longitude in degrees (0-360)"""
