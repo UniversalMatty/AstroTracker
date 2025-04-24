@@ -16,6 +16,7 @@ from utils.geocoding import get_coordinates
 from utils.astronomy import calculate_planet_positions, get_zodiac_sign
 from utils.astrology import get_nakshatra, get_house_meanings
 from utils.planet_descriptions import get_planet_description
+from utils.position_interpretations import get_planet_in_sign_interpretation, get_house_meaning
 from utils.swisseph import calculate_jd_ut, calculate_house_cusps
 from models import db, Chart, PlanetPosition
 
@@ -530,7 +531,7 @@ def calculate():
         # Add nakshatra information and descriptions to planets
         for planet in planets:
             planet['nakshatra'] = get_nakshatra_from_longitude(planet['longitude'])
-            planet['description'] = get_planet_description(planet['name'])
+            planet['description'] = get_planet_in_sign_interpretation(planet['name'], planet['sign'])
         
         # Always calculate houses and ascendant using Skyfield for better accuracy
         # Get timezone
@@ -762,8 +763,8 @@ def view_chart(chart_id):
                 'position': '50.0%'  # Default position within nakshatra
             }
         
-        # Add planet description
-        planet['description'] = get_planet_description(position.planet_name)
+        # Add position-specific interpretation
+        planet['description'] = get_planet_in_sign_interpretation(position.planet_name, position.sign)
         
         planets.append(planet)
     
