@@ -123,7 +123,8 @@ def calculate():
             birth_details=birth_details,
             planets=planets,
             houses=houses,
-            house_meanings=house_meanings
+            house_meanings=house_meanings,
+            use_calibration=use_calibration
         )
         
     except Exception as e:
@@ -285,7 +286,8 @@ def view_chart(chart_id):
         houses=houses,
         house_meanings=house_meanings,
         chart_id=chart_id,
-        notes=chart.notes
+        notes=chart.notes,
+        use_calibration=use_calibration
     )
 
 @app.route('/test_ascendant')
