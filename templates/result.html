@@ -44,6 +44,59 @@
             </div>
         </div>
         
+        <!-- Ascendant & Houses Section -->
+        {% if ascendant %}
+        <div class="card mb-4">
+            <div class="card-header bg-primary text-white">
+                <h3 class="mb-0">Ascendant (Lagna) & Houses</h3>
+            </div>
+            <div class="card-body">
+                <div class="row mb-4">
+                    <div class="col-md-12">
+                        <h4>Ascendant (Rising Sign)</h4>
+                        <p class="lead">
+                            Your ascendant is <strong class="sign-{{ ascendant.sign.lower() }}">{{ ascendant.formatted }}</strong>
+                        </p>
+                        <p>
+                            The ascendant, also known as the "lagna" in Vedic astrology, is perhaps the most important point in your birth chart. 
+                            It represents your physical appearance, personality, approach to life, and how others perceive you. The ascendant 
+                            changes signs approximately every two hours, making it one of the most personalized aspects of your birth chart.
+                        </p>
+                    </div>
+                </div>
+
+                {% if houses %}
+                <div class="row">
+                    <div class="col-md-12">
+                        <h4>House Cusps (Equal Houses System)</h4>
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>House</th>
+                                    <th>Sign Position</th>
+                                    <th>Meaning</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for house in houses %}
+                                <tr>
+                                    <td>{{ house.house }}</td>
+                                    <td class="sign-{{ house.sign.lower() }}">{{ house.formatted }}</td>
+                                    <td>{{ house.meaning }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                        <p class="text-muted">
+                            <small>House cusps calculated using Equal Houses system with Lahiri ayanamsa.</small>
+                        </p>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
+
         <!-- Planets Section -->
         <div class="card mb-4">
             <div class="card-header bg-primary text-white">

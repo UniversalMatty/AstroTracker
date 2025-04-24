@@ -76,6 +76,17 @@ def calculate():
             # Add planet description
             planet['description'] = get_planet_description(planet['name'])
         
+        # Calculate house cusps and ascendant (lagna)
+        jd_ut = calculate_jd_ut(dob_date, dob_time)
+        house_data = calculate_house_cusps(jd_ut, latitude, longitude)
+        
+        # Get house meanings
+        house_meanings = get_house_meanings()
+        
+        # Add meanings to houses
+        for house in house_data['houses']:
+            house['meaning'] = house_meanings.get(house['house'], '')
+        
         # Store calculation results in session
         birth_details = {
             'name': name,
@@ -89,7 +100,9 @@ def calculate():
         return render_template(
             'result.html',
             birth_details=birth_details,
-            planets=planets
+            planets=planets,
+            ascendant=house_data['ascendant'],
+            houses=house_data['houses']
         )
         
     except Exception as e:
@@ -205,12 +218,34 @@ def view_chart(chart_id):
         'coordinates': (chart.longitude, chart.latitude)
     }
     
+    # Calculate house cusps and ascendant (lagna) for viewing
+    if chart.birth_time:
+        jd_ut = calculate_jd_ut(chart.birth_date.strftime('%Y-%m-%d'), 
+                                chart.birth_time.strftime('%H:%M'))
+        house_data = calculate_house_cusps(jd_ut, chart.latitude, chart.longitude)
+        
+        # Get house meanings
+        house_meanings = get_house_meanings()
+        
+        # Add meanings to houses
+        for house in house_data['houses']:
+            house['meaning'] = house_meanings.get(house['house'], '')
+            
+        ascendant = house_data['ascendant']
+        houses = house_data['houses']
+    else:
+        # Can't calculate houses without time
+        ascendant = None
+        houses = None
+    
     return render_template(
         'result.html',
         birth_details=birth_details,
         planets=planets,
         chart_id=chart_id,
-        notes=chart.notes
+        notes=chart.notes,
+        ascendant=ascendant,
+        houses=houses
     )
 
 @app.route('/test_ascendant')
