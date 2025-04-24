@@ -222,6 +222,9 @@ def calculate_whole_sign_houses(ascendant_position):
     In this system, the sign containing the ascendant becomes the 1st house,
     and each subsequent sign becomes the next house.
     
+    For example, if the Ascendant is Aquarius 19°25'43", 
+    the 1st house cusp is Aquarius 0°0'0".
+    
     Args:
         ascendant_position: Dictionary with ascendant details
         
@@ -237,11 +240,16 @@ def calculate_whole_sign_houses(ascendant_position):
         current_sign_index = (sign_index + i) % 12
         current_sign = ZODIAC_SIGNS[current_sign_index]
         
+        # In Whole Sign system, houses start at 0° of the sign 
+        # regardless of where the ascendant is within the sign
+        house_longitude = current_sign_index * 30  # 0-based index, each sign is 30 degrees
+        
         house = {
             "house": house_num,
             "sign": current_sign,
-            "degree": 0.0,  # In Whole Sign system, houses start at 0° of the sign
-            "formatted": f"{current_sign}",
+            "degree": 0.0,  # Always 0 degrees in Whole Sign
+            "longitude": house_longitude,
+            "formatted": f"{current_sign} 0°0'0\"",
             "system": "Whole Sign"
         }
         houses.append(house)
@@ -254,6 +262,9 @@ def calculate_equal_houses(ascendant_position):
     In this system, the ascendant becomes the 1st house cusp,
     and each subsequent house cusp is 30 degrees apart.
     
+    For example, if the Ascendant is Aquarius 19°25'43", 
+    the 1st house cusp is also at Aquarius 19°25'43".
+    
     Args:
         ascendant_position: Dictionary with ascendant details
         
@@ -262,6 +273,7 @@ def calculate_equal_houses(ascendant_position):
     """
     houses = []
     ascendant_longitude = ascendant_position['longitude']
+    ascendant_degree = ascendant_position['degree']
     
     for i in range(12):
         house_num = i + 1
@@ -269,12 +281,18 @@ def calculate_equal_houses(ascendant_position):
         house_sign = get_zodiac_sign_from_longitude(house_cusp_longitude)
         house_degree = house_cusp_longitude % 30
         
+        # Format degrees in DMS format (degrees, minutes, seconds)
+        degree_int = int(house_degree)
+        minutes_float = (house_degree - degree_int) * 60
+        minutes_int = int(minutes_float)
+        seconds_int = int((minutes_float - minutes_int) * 60)
+        
         house = {
             "house": house_num,
             "sign": house_sign,
             "degree": house_degree,
             "longitude": house_cusp_longitude,
-            "formatted": f"{house_sign} {house_degree:.2f}°",
+            "formatted": f"{house_sign} {degree_int}°{minutes_int}'{seconds_int}\"",
             "system": "Equal Houses"
         }
         houses.append(house)
@@ -956,62 +974,64 @@ def view_chart(chart_id):
         calculation_method='Skyfield (High Precision)'
     )
 
-@app.route('/export_chart_pdf', methods=['GET'])
-def export_chart_pdf():
-    """Export the current chart data as PDF file"""
-    try:
-        # Get data from session
-        if 'planets' not in session or 'birth_details' not in session:
-            flash('No chart data available to export. Please calculate a chart first.', 'warning')
-            return redirect(url_for('index'))
-            
-        # Get chart data from session
-        birth_details = session['birth_details']
-        planets = session['planets']
-        ascendant = session.get('ascendant')
-        houses = session.get('houses')
-        
-        # Make sure the ascendant has a description
-        if ascendant and 'description' not in ascendant:
-            ascendant['description'] = get_ascendant_interpretation(ascendant['sign'])
-        
-        # Make sure all planets have descriptions
-        for planet in planets:
-            if 'description' not in planet:
-                planet['description'] = get_planet_in_sign_interpretation(planet['name'], planet['sign'])
-        
-        # Render PDF template
-        from flask_weasyprint import HTML, render_pdf
-        import re
-        
-        html = render_template(
-            'chart_pdf.html',
-            birth_details=birth_details,
-            planets=planets,
-            ascendant=ascendant,
-            houses=houses,
-            notes=""  # No notes for direct export
-        )
-        
-        # Generate PDF using WeasyPrint
-        pdf = render_pdf(HTML(string=html))
-        
-        # Create a safe filename
-        safe_name = re.sub(r'[^\w\s-]', '', birth_details["name"])  # Remove special chars
-        safe_name = re.sub(r'\s+', '_', safe_name).strip()  # Replace spaces with underscores
-        safe_date = birth_details["date"].replace("-", "")
-        
-        # Create response
-        response = make_response(pdf)
-        response.headers['Content-Disposition'] = f'attachment; filename=chart_{safe_name}_{safe_date}.pdf'
-        response.headers['Content-Type'] = 'application/pdf'
-        
-        return response
-        
-    except Exception as e:
-        logging.error(f"Error exporting chart as PDF: {str(e)}")
-        flash(f'Error exporting chart: {str(e)}', 'danger')
-        return redirect(url_for('index'))
+# PDF export functionality has been removed as requested
+# @app.route('/export_chart_pdf', methods=['GET'])
+# def export_chart_pdf():
+#     """Export the current chart data as PDF file"""
+#     try:
+#         # Get data from session
+#         if 'planets' not in session or 'birth_details' not in session:
+#             flash('No chart data available to export. Please calculate a chart first.', 'warning')
+#             return redirect(url_for('index'))
+#             
+#         # Get chart data from session
+#         birth_details = session['birth_details']
+#         planets = session['planets']
+#         ascendant = session.get('ascendant')
+#         houses = session.get('houses')
+#         
+#         # Make sure the ascendant has a description
+#         if ascendant and 'description' not in ascendant:
+#             ascendant['description'] = get_ascendant_interpretation(ascendant['sign'])
+#         
+#         # Make sure all planets have descriptions
+#         for planet in planets:
+#             if 'description' not in planet:
+#                 planet['description'] = get_planet_in_sign_interpretation(planet['name'], planet['sign'])
+#         
+#         # Render PDF template
+#         from flask_weasyprint import HTML, render_pdf
+#         import re
+#         
+#         html = render_template(
+#             'chart_pdf.html',
+#             birth_details=birth_details,
+#             planets=planets,
+#             ascendant=ascendant,
+#             houses=houses,
+#             notes=""  # No notes for direct export
+#         )
+#         
+#         # Generate PDF using WeasyPrint
+#         pdf = render_pdf(HTML(string=html))
+#         
+#         # Create a safe filename
+#         safe_name = re.sub(r'[^\w\s-]', '', birth_details["name"])  # Remove special chars
+#         safe_name = re.sub(r'\s+', '_', safe_name).strip()  # Replace spaces with underscores
+#         safe_date = birth_details["date"].replace("-", "")
+#         
+#         # Create response
+#         response = make_response(pdf)
+#         response.headers['Content-Disposition'] = f'attachment; filename=chart_{safe_name}_{safe_date}.pdf'
+#         response.headers['Content-Type'] = 'application/pdf'
+#         
+#         return response
+#         
+#     except Exception as e:
+#         logging.error(f"Error exporting chart as PDF: {str(e)}")
+#         flash(f'Error exporting chart: {str(e)}', 'danger')
+#         return redirect(url_for('index'))
+#
 
 @app.route('/test_ascendant')
 def test_ascendant():

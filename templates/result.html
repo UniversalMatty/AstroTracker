@@ -41,17 +41,7 @@
                 </div>
             </div>
             
-            <!-- Export Options -->
-            <div class="row mt-3">
-                <div class="col-12">
-                    <div class="d-flex gap-2 justify-content-end">
-                        <!-- Export as PDF -->
-                        <a href="{{ url_for('export_chart_pdf') }}" class="btn btn-secondary">
-                            <i class="fas fa-file-pdf me-1"></i> Export PDF
-                        </a>
-                    </div>
-                </div>
-            </div>
+
         </div>
         
         <!-- Ascendant Section -->
@@ -125,13 +115,22 @@
         <div class="card mb-4">
             <div class="card-header bg-primary text-white">
                 <div class="d-flex justify-content-between align-items-center">
-                    <h3 class="mb-0">House Cusps</h3>
+                    <h3 class="mb-0">House Cusps ({{ houses[0].system }})</h3>
                     <span class="badge bg-info" data-bs-toggle="tooltip" title="Calculated using Skyfield precision astronomical algorithms">
                         <i class="fas fa-stars me-1"></i> High Precision
                     </span>
                 </div>
             </div>
             <div class="card-body">
+                {% if houses[0].system == "Whole Sign" %}
+                <div class="alert alert-info">
+                    <p><strong>Whole Sign Houses:</strong> In this system, the entire sign containing the Ascendant becomes the 1st house, and each subsequent sign becomes the next house. This means each house cusp falls at 0° of its sign.</p>
+                </div>
+                {% else %}
+                <div class="alert alert-info">
+                    <p><strong>Equal Houses:</strong> In this system, the Ascendant position is the 1st house cusp, and each subsequent house cusp is exactly 30° apart. This allows house cusps to fall at any degree within a sign.</p>
+                </div>
+                {% endif %}
                 <table class="table table-striped">
                     <thead>
                         <tr>
@@ -205,11 +204,8 @@
 
         
         <div class="text-center mt-4 mb-4">
-            <a href="{{ url_for('index') }}" class="btn btn-outline-primary me-2">
+            <a href="{{ url_for('index') }}" class="btn btn-outline-primary">
                 <i class="fas fa-arrow-left me-2"></i> Calculate Another Chart
-            </a>
-            <a href="{{ url_for('export_chart_pdf') }}" class="btn btn-outline-success me-2">
-                <i class="fas fa-file-pdf me-2"></i> Export PDF
             </a>
         </div>
         
