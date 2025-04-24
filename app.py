@@ -752,35 +752,15 @@ def calculate():
                 'houses': houses
             }
             
-            # Use our simple house calculation - Whole Sign only
-            # IMPORTANT: Force the first house to match the ascendant sign exactly
-            # This is the key to fixing the mismatch issue
-            from utils.position_interpretations import calculate_simple_houses
+            # Use our completely new implementation for house calculation
+            from utils.position_interpretations import build_houses_from_ascendant
             
-            # Ensure the ascendant sign is one of the 12 standard zodiac signs
-            standard_signs = ['Aries', 'Taurus', 'Gemini', 'Cancer', 'Leo', 'Virgo', 
-                             'Libra', 'Scorpio', 'Sagittarius', 'Capricorn', 'Aquarius', 'Pisces']
-            
+            # Get the ascendant sign directly from the position data
             ascendant_sign = ascendant_position['sign']
-            logging.debug(f"Raw ascendant sign from Kerykeion: '{ascendant_sign}'")
+            logging.debug(f"Ascendant sign from Kerykeion: '{ascendant_sign}'")
             
-            # Default to Aries if the sign is not recognized
-            if ascendant_sign not in standard_signs:
-                logging.warning(f"Unrecognized ascendant sign: '{ascendant_sign}', defaulting to Aries")
-                ascendant_sign = 'Aries'
-                
-            # Calculate houses using the verified ascendant sign
-            houses = calculate_simple_houses(ascendant_sign)
-            logging.debug(f"First house after calculation: {houses[0]['sign']}")
-            
-            # Double-check the first house sign matches the ascendant sign
-            if houses[0]['sign'] != ascendant_sign:
-                logging.warning(f"House 1 sign ({houses[0]['sign']}) doesn't match ascendant ({ascendant_sign}), fixing...")
-                houses[0]['sign'] = ascendant_sign
-            
-            # Set house system to Whole Sign
-            for house in houses:
-                house["system"] = "Whole Sign"
+            # Build houses with the new function designed to guarantee House 1 matches the Ascendant
+            houses = build_houses_from_ascendant(ascendant_sign)
             
             # Log house data to debug
             logging.debug(f"HOUSE SYSTEM SELECTED: {house_system}")
@@ -810,9 +790,9 @@ def calculate():
             # Add ascendant interpretation
             ascendant_position['description'] = get_ascendant_interpretation(ascendant_position['sign'])
             
-            # Use our simple house calculation
-            from utils.position_interpretations import calculate_simple_houses
-            houses = calculate_simple_houses(ascendant_position['sign'])
+            # Use our completely new implementation for house calculation
+            from utils.position_interpretations import build_houses_from_ascendant
+            houses = build_houses_from_ascendant(ascendant_position['sign'])
             
             # Get house meanings
             house_meanings = get_house_meanings()
@@ -1036,30 +1016,15 @@ def view_chart(chart_id):
             # Log calculation details
             logging.debug(f"Ascendant: {ascendant_position['formatted']} (Kerykeion calculation in view_chart)")
             
-            # Calculate houses using our new simple calculation
-            # IMPORTANT: Force the first house to match the ascendant sign exactly
-            from utils.position_interpretations import calculate_simple_houses
+            # Use our completely new implementation for house calculation
+            from utils.position_interpretations import build_houses_from_ascendant
             
-            # Ensure the ascendant sign is one of the 12 standard zodiac signs
-            standard_signs = ['Aries', 'Taurus', 'Gemini', 'Cancer', 'Leo', 'Virgo', 
-                             'Libra', 'Scorpio', 'Sagittarius', 'Capricorn', 'Aquarius', 'Pisces']
-            
+            # Get the ascendant sign directly from the position data
             ascendant_sign = ascendant_position['sign']
-            logging.debug(f"View Chart: Raw ascendant sign from Kerykeion: '{ascendant_sign}'")
+            logging.debug(f"View Chart: Ascendant sign from Kerykeion: '{ascendant_sign}'")
             
-            # Default to Aries if the sign is not recognized
-            if ascendant_sign not in standard_signs:
-                logging.warning(f"View Chart: Unrecognized ascendant sign: '{ascendant_sign}', defaulting to Aries")
-                ascendant_sign = 'Aries'
-                
-            # Calculate houses using the verified ascendant sign
-            houses = calculate_simple_houses(ascendant_sign)
-            logging.debug(f"View Chart: First house after calculation: {houses[0]['sign']}")
-            
-            # Double-check the first house sign matches the ascendant sign
-            if houses[0]['sign'] != ascendant_sign:
-                logging.warning(f"View Chart: House 1 sign ({houses[0]['sign']}) doesn't match ascendant ({ascendant_sign}), fixing...")
-                houses[0]['sign'] = ascendant_sign
+            # Build houses with the new function designed to guarantee House 1 matches the Ascendant
+            houses = build_houses_from_ascendant(ascendant_sign)
             
             # Get house meanings
             house_meanings = get_house_meanings()
@@ -1078,14 +1043,9 @@ def view_chart(chart_id):
             ascendant_position = format_position(sidereal_asc)
             logging.warning(f"Using emergency fallback ascendant in view_chart: {ascendant_position['formatted']}")
             
-            # Calculate houses using simple formula
-            from utils.position_interpretations import calculate_simple_houses
-            houses = calculate_simple_houses(ascendant_position['sign'])
-            
-            # Double-check the first house sign matches the ascendant sign (as a safety measure)
-            if houses[0]['sign'] != ascendant_position['sign']:
-                logging.warning(f"Emergency fallback in view_chart: House 1 sign ({houses[0]['sign']}) doesn't match ascendant ({ascendant_position['sign']}), fixing...")
-                houses[0]['sign'] = ascendant_position['sign']
+            # Use our completely new implementation for house calculation even in fallback
+            from utils.position_interpretations import build_houses_from_ascendant
+            houses = build_houses_from_ascendant(ascendant_position['sign'])
             
             # Get house meanings
             house_meanings = get_house_meanings()

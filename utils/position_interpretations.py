@@ -4,49 +4,71 @@ These interpretations provide practical insights on the specific combinations
 of planets in signs rather than general descriptions of planets or signs.
 """
 
-def calculate_simple_houses(ascendant_sign):
+def build_houses_from_ascendant(ascendant_sign):
     """
-    Calculate houses based on a simple formula:
-    1. Check the Ascendant Zodiac Sign
-    2. Put the same zodiac sign in the 1st house
-    3. Following houses have following zodiac signs in order
+    NEW IMPLEMENTATION: Build houses using the Whole Sign system
+    
+    1. First house has the exact same sign as the Ascendant (Lagna)
+    2. Subsequent houses have consecutive zodiac signs
+    
+    This implementation is guaranteed to make House 1 match the Ascendant sign.
     
     Args:
-        ascendant_sign: String with the ascendant's sign name
+        ascendant_sign: String containing the Ascendant's zodiac sign
         
     Returns:
-        List of houses with their signs and meanings
+        List of dictionaries containing house data
     """
-    # Define zodiac signs
+    import logging
+    
+    # Standard zodiac signs in order
     zodiac_signs = [
         'Aries', 'Taurus', 'Gemini', 'Cancer', 
         'Leo', 'Virgo', 'Libra', 'Scorpio',
         'Sagittarius', 'Capricorn', 'Aquarius', 'Pisces'
     ]
     
-    # Find the index of the ascendant sign
-    try:
-        sign_index = zodiac_signs.index(ascendant_sign)
-    except ValueError:
-        # Default to Aries if sign not found
-        sign_index = 0
+    # Validate the ascendant sign
+    if ascendant_sign not in zodiac_signs:
+        logging.warning(f"Invalid ascendant sign '{ascendant_sign}', defaulting to Aries")
+        ascendant_sign = 'Aries'
     
-    # Calculate houses
+    # Find the index of the ascendant sign
+    asc_index = zodiac_signs.index(ascendant_sign)
+    
+    # Create the houses array with the Whole Sign system:
+    # 1st house has the ascendant sign, subsequent houses have consecutive signs
     houses = []
-    for i in range(12):
-        house_num = i + 1
-        current_sign_index = (sign_index + i) % 12
-        current_sign = zodiac_signs[current_sign_index]
+    
+    for house_num in range(1, 13):  # Houses 1-12
+        # Calculate the sign index for this house (wrapping around the zodiac)
+        sign_index = (asc_index + house_num - 1) % 12
+        sign = zodiac_signs[sign_index]
         
-        # Create house object
+        # Add house to the list
         house = {
             "house": house_num,
-            "sign": current_sign,
-            "meaning": get_house_meaning(house_num, current_sign)
+            "sign": sign,
+            "system": "Whole Sign"
         }
         houses.append(house)
     
+    # Log the houses (for debugging)
+    logging.debug(f"Ascendant sign: {ascendant_sign}")
+    logging.debug(f"House 1 sign: {houses[0]['sign']}")
+    
+    # Double-check that House 1 matches the Ascendant sign
+    if houses[0]['sign'] != ascendant_sign:
+        logging.error(f"House calculation error: House 1 sign ({houses[0]['sign']}) doesn't match ascendant ({ascendant_sign})")
+        # Force correct it (emergency fallback)
+        houses[0]['sign'] = ascendant_sign
+    
     return houses
+
+# Legacy function kept for backwards compatibility
+def calculate_simple_houses(ascendant_sign):
+    """Legacy wrapper for build_houses_from_ascendant"""
+    return build_houses_from_ascendant(ascendant_sign)
 
 def get_planet_in_sign_interpretation(planet_name, sign_name):
     """
