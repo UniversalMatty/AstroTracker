@@ -565,8 +565,8 @@ def calculate():
         try:
             logging.debug("About to calculate ascendant using Swiss Ephemeris...")
             
-            # Import Swiss Ephemeris house calculation function
-            from utils.swisseph import calculate_houses_and_ascendant
+            # Import Swiss Ephemeris house calculation and formatting functions
+            from utils.swisseph import calculate_houses_and_ascendant, format_longitude_dms
             
             # Calculate using Julian Day from the same time used for planets
             # This ensures consistency between planet and ascendant calculations
@@ -811,8 +811,8 @@ def view_chart(chart_id):
         try:
             logging.debug("About to calculate ascendant in view_chart using Swiss Ephemeris...")
             
-            # Import Swiss Ephemeris house calculation function
-            from utils.swisseph import calculate_jd_ut, calculate_houses_and_ascendant
+            # Import Swiss Ephemeris house calculation and formatting functions
+            from utils.swisseph import calculate_jd_ut, calculate_houses_and_ascendant, format_longitude_dms
             
             # Get Julian Day from birth date and time
             birth_date_str = chart.birth_date.strftime('%Y-%m-%d')
