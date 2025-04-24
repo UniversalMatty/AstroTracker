@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>{{ birth_details.name }}'s Astrological Chart</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            color: #333;
+            line-height: 1.6;
+            margin: 0;
+            padding: 20px;
+            background-color: #fff;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        h1, h2, h3, h4 {
+            color: #2c3e50;
+            margin-top: 24px;
+        }
+        h1 {
+            text-align: center;
+            font-size: 28px;
+            margin-bottom: 30px;
+            border-bottom: 2px solid #3498db;
+            padding-bottom: 10px;
+        }
+        h2 {
+            font-size: 24px;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 8px;
+        }
+        h3 {
+            font-size: 20px;
+            margin-bottom: 15px;
+        }
+        .birth-info {
+            background-color: #f8f9fa;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 25px;
+        }
+        .birth-info p {
+            margin: 5px 0;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+        th, td {
+            padding: 12px 15px;
+            border-bottom: 1px solid #ddd;
+            text-align: left;
+        }
+        th {
+            background-color: #f2f2f2;
+            font-weight: bold;
+        }
+        tr:hover {
+            background-color: #f5f5f5;
+        }
+        .footer {
+            text-align: center;
+            margin-top: 40px;
+            font-size: 14px;
+            color: #7f8c8d;
+            border-top: 1px solid #eee;
+            padding-top: 20px;
+        }
+        .card {
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .card-header {
+            background-color: #4a69bd;
+            color: white;
+            padding: 12px 15px;
+            font-weight: bold;
+            border-top-left-radius: 5px;
+            border-top-right-radius: 5px;
+        }
+        .card-body {
+            padding: 15px;
+        }
+        .sign-aries { color: #e74c3c; }
+        .sign-taurus { color: #27ae60; }
+        .sign-gemini { color: #f39c12; }
+        .sign-cancer { color: #3498db; }
+        .sign-leo { color: #e67e22; }
+        .sign-virgo { color: #2ecc71; }
+        .sign-libra { color: #1abc9c; }
+        .sign-scorpio { color: #8e44ad; }
+        .sign-sagittarius { color: #d35400; }
+        .sign-capricorn { color: #34495e; }
+        .sign-aquarius { color: #3498db; }
+        .sign-pisces { color: #9b59b6; }
+        .planet-card {
+            page-break-inside: avoid;
+            margin-bottom: 15px;
+        }
+        .planet-header {
+            background-color: #2c3e50;
+            color: white;
+            padding: 8px 12px;
+            font-weight: bold;
+        }
+        .planet-body {
+            padding: 12px;
+            background-color: #f9f9f9;
+            border: 1px solid #ddd;
+        }
+        .retrograde {
+            font-style: italic;
+        }
+        @page {
+            margin: 2cm;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Your Energetic Blueprint</h1>
+        
+        <div class="birth-info">
+            <h2>Chart for {{ birth_details.name }}</h2>
+            <p><strong>Birth Date:</strong> {{ birth_details.date }}</p>
+            <p><strong>Birth Time:</strong> {{ birth_details.time }}</p>
+            <p><strong>Location:</strong> {{ birth_details.location }}</p>
+            <p><strong>Coordinates:</strong> {{ birth_details.coordinates[1] }}°N, {{ birth_details.coordinates[0] }}°E</p>
+            {% if notes %}
+            <p><strong>Notes:</strong> {{ notes }}</p>
+            {% endif %}
+        </div>
+        
+        {% if ascendant %}
+        <div class="card">
+            <div class="card-header">Ascendant (Rising Sign)</div>
+            <div class="card-body">
+                <p>Your ascendant is <strong class="sign-{{ ascendant.sign.lower() }}">{{ ascendant.formatted }}</strong></p>
+                <p>{{ ascendant.description }}</p>
+            </div>
+        </div>
+        {% endif %}
+        
+        <div class="card">
+            <div class="card-header">Planetary Positions</div>
+            <div class="card-body">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Planet</th>
+                            <th>Position</th>
+                            <th>Nakshatra</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for planet in planets %}
+                        <tr>
+                            <td><strong class="{% if planet.retrograde %}retrograde{% endif %}">{{ planet.name }}</strong></td>
+                            <td class="sign-{{ planet.sign.lower() }}">{{ planet.formatted_position }}</td>
+                            <td>
+                                {{ planet.nakshatra.name }}
+                                <div>{{ planet.nakshatra.position }} - {{ planet.nakshatra.ruling_planet }}</div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        
+        {% if houses %}
+        <div class="card">
+            <div class="card-header">House Cusps</div>
+            <div class="card-body">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>House</th>
+                            <th>Sign</th>
+                            <th>Meaning</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for house in houses %}
+                        <tr>
+                            <td>{{ house.house }}</td>
+                            <td class="sign-{{ house.sign.lower() }}">{{ house.sign }}</td>
+                            <td>{{ house.meaning }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                <p><small>House cusps calculated with Lahiri ayanamsa sidereal calculations.</small></p>
+            </div>
+        </div>
+        {% endif %}
+        
+        <h2>Planet Interpretations</h2>
+        <p>The following interpretations explain how each planetary position in your chart may manifest in your personality and life experiences:</p>
+        
+        {% for planet in planets %}
+        <div class="planet-card">
+            <div class="planet-header">
+                <span class="{% if planet.retrograde %}retrograde{% endif %}">{{ planet.name }}</span> in 
+                <span class="sign-{{ planet.sign.lower() }}">{{ planet.sign }}</span>
+            </div>
+            <div class="planet-body">
+                <div style="margin-bottom: 10px;">
+                    <strong>Position:</strong> {{ planet.formatted_position }}
+                    {% if planet.retrograde %}
+                        <span>(Retrograde)</span>
+                    {% endif %}
+                </div>
+                
+                <div style="margin-bottom: 10px;">
+                    <strong>Nakshatra:</strong> {{ planet.nakshatra.name }} ({{ planet.nakshatra.position }})
+                    <div><small>Ruling planet: {{ planet.nakshatra.ruling_planet }}</small></div>
+                </div>
+                
+                <p>{{ planet.description }}</p>
+            </div>
+        </div>
+        {% endfor %}
+        
+        <div class="footer">
+            <p>Your Energetic Blueprint &copy; 2025</p>
+            <p>Map of Your Energetic System</p>
+            <p>Using Lahiri ayanamsa and authentic sidereal calculations</p>
+        </div>
+    </div>
+</body>
+</html>

@@ -16,7 +16,7 @@ from utils.geocoding import get_coordinates
 from utils.astronomy import calculate_planet_positions, get_zodiac_sign
 from utils.astrology import get_nakshatra, get_house_meanings
 from utils.planet_descriptions import get_planet_description
-from utils.position_interpretations import get_planet_in_sign_interpretation, get_house_meaning
+from utils.position_interpretations import get_planet_in_sign_interpretation, get_house_meaning, get_ascendant_interpretation
 from utils.swisseph import calculate_jd_ut, calculate_house_cusps
 from models import db, Chart, PlanetPosition
 
@@ -595,6 +595,9 @@ def calculate():
             for house in houses:
                 house["meaning"] = get_house_meaning(house["house"], house["sign"])
             
+            # Add ascendant interpretation
+            ascendant_position['description'] = get_ascendant_interpretation(ascendant_position['sign'])
+            
             # Create the house_data structure that the rest of the code expects
             house_data = {
                 'ascendant': ascendant_position,
@@ -614,6 +617,9 @@ def calculate():
             sidereal_asc = 0.0  # Aries 0°
             ascendant_position = format_position(sidereal_asc)
             logging.warning(f"Using emergency fallback ascendant: {ascendant_position['formatted']}")
+            
+            # Add ascendant interpretation
+            ascendant_position['description'] = get_ascendant_interpretation(ascendant_position['sign'])
             
             # Calculate houses using Whole Sign system with our original method
             houses = calculate_whole_sign_houses(ascendant_position)
