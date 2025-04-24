@@ -6,7 +6,7 @@ import swisseph as swe
 from utils.astronomy import degrees_to_dms, get_zodiac_sign, calculate_lahiri_ayanamsa
 from utils.swisseph import calculate_jd_ut, calculate_houses as swe_calculate_houses, get_zodiac_sign as swe_get_zodiac_sign
 
-def calculate_houses(date_str, time_str, longitude, latitude, fixed_ascendant=None, use_calibration=False):
+def calculate_houses(date_str, time_str, longitude, latitude, fixed_ascendant=None):
     """
     Calculate house cusps using whole sign system and sidereal calculations.
     
@@ -19,7 +19,6 @@ def calculate_houses(date_str, time_str, longitude, latitude, fixed_ascendant=No
     - longitude: Geographic longitude in decimal degrees
     - latitude: Geographic latitude in decimal degrees
     - fixed_ascendant: Optional fixed ascendant position in degrees
-    - use_calibration: Whether to use special calibration to match reference charts
     
     Returns a list of dictionaries with house data
     """
@@ -54,41 +53,7 @@ def calculate_houses(date_str, time_str, longitude, latitude, fixed_ascendant=No
                 ayanamsa = calculate_ayanamsa(jd_ut)
                 logging.debug(f"Krishnamurti ayanamsa: {ayanamsa:.4f}°")
                 
-                # Apply calibration if requested
-                if use_calibration:
-                    # We're using exact offsets for specific cases
-                    # Using information from test charts
-                    
-                    # Check if it's Mateusz's chart (1993-02-17)
-                    is_mateusz = date_str == '1993-02-17' and time_str == '07:18'
-                    
-                    # Check if it's Damian's chart (1997-09-17)
-                    is_damian = date_str == '1997-09-17' and time_str == '13:04'
-                    
-                    if is_mateusz:
-                        # For Mateusz's chart, to get Aquarius 19:57
-                        # We need exact calibration from the test data
-                        tropical_degree = ascendant_tropical
-                        target_degree = 319.57  # Aquarius 19:57 in absolute degrees
-                        calibration_offset = (tropical_degree - target_degree) % 360
-                        logging.debug(f"Using exact Mateusz calibration offset: {calibration_offset}°")
-                    elif is_damian:
-                        # For Damian's chart, to get Scorpio 9:35
-                        tropical_degree = ascendant_tropical
-                        target_degree = 219.35  # Scorpio 9:35 in absolute degrees
-                        calibration_offset = (tropical_degree - target_degree) % 360
-                        logging.debug(f"Using exact Damian calibration offset: {calibration_offset}°")
-                    else:
-                        # For other charts, use a general offset of 30 degrees
-                        # We might need to refine this with more reference charts later
-                        calibration_offset = 30.0
-                        logging.debug(f"Using general calibration offset of {calibration_offset}°")
-                    
-                    calibrated_ayanamsa = ayanamsa + calibration_offset
-                    logging.debug(f"Calibrated ayanamsa: {calibrated_ayanamsa:.4f}° (standard: {ayanamsa:.4f}°)")
-                    
-                    # Use the calibrated ayanamsa for calculation
-                    ayanamsa = calibrated_ayanamsa
+                # No calibration is applied - using standard ayanamsa values
                 
                 # In Vedic astrology, the ayanamsa is subtracted from tropical positions
                 # to convert them to sidereal positions
