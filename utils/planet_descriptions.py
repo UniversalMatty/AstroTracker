@@ -1,44 +1,44 @@
 """
-Planet descriptions for Vedic astrology.
-Each description provides information about the planet's meaning and significance.
+Planet descriptions for the Energetic Blueprint system.
+Each description provides practical information about how planetary positions can manifest in personality traits and life patterns.
 """
 
 def get_planet_description(planet_name):
     """
-    Get a short description for the given planet.
+    Get a practical description for the given planet.
     
     Args:
         planet_name: Name of the planet
         
     Returns:
-        A string describing the planet's astrological significance
+        A string describing the planet's practical significance in real-world terms
     """
     descriptions = {
-        "Sun": "The Sun represents our core identity, ego, and personal power. In Vedic astrology, it governs authority, vitality, leadership, and self-expression. The Sun's position indicates areas of life where you naturally shine and express your individuality.",
+        "Sun": "The Sun represents your core personality traits, confidence level, and natural talents. Its position can indicate your leadership style, how you express authority in professional settings, and the ways you seek recognition. A strong Sun often correlates with clear career direction and the ability to make independent decisions.",
         
-        "Moon": "The Moon represents our emotions, subconscious mind, and inner feelings. In Vedic astrology, it governs intuition, nurturing abilities, and how we respond emotionally to experiences. The Moon's position indicates the nature of your emotional landscape and needs for comfort and security.",
+        "Moon": "The Moon represents your emotional patterns, comfort needs, and instinctive reactions. Its position can indicate how you handle stress, your relationship with family members, and your emotional intelligence. The Moon's influence often appears in your home environment preferences and how you nurture relationships.",
         
-        "Mercury": "Mercury represents intellect, communication, and analytical thinking. In Vedic astrology, it governs learning, speech, writing, and quick-wittedness. Mercury's position indicates how you process information, express yourself verbally, and approach problem-solving.",
+        "Mercury": "Mercury represents your communication style, learning methods, and decision-making process. Its position can indicate your educational strengths, how you express ideas at work, and your approach to problem-solving. Mercury often manifests in your technological aptitude, writing abilities, and effectiveness in negotiations.",
         
-        "Venus": "Venus represents love, beauty, aesthetics, and relationships. In Vedic astrology, it governs pleasure, artistic talents, and sensuality. Venus's position indicates your approach to love, what you find beautiful, and how you express affection and create harmony.",
+        "Venus": "Venus represents your relationship patterns, aesthetic preferences, and financial habits. Its position can indicate your approach to partnerships, spending habits, and design sensibilities. Venus influences your diplomatic skills, taste in art and music, and how you maintain harmony in various social contexts.",
         
-        "Mars": "Mars represents energy, action, courage, and desire. In Vedic astrology, it governs ambition, physical strength, and competitive drive. Mars's position indicates how you assert yourself, pursue goals, and channel your passions and aggression.",
+        "Mars": "Mars represents your energy levels, competitive nature, and action patterns. Its position can indicate your work ethic, exercise preferences, and conflict resolution style. Mars often influences career choices related to leadership, athletics, or technical skills, and can show how you pursue goals and handle challenging situations.",
         
-        "Jupiter": "Jupiter represents expansion, wisdom, and abundance. In Vedic astrology, it governs higher learning, philosophy, spirituality, and good fortune. Jupiter's position indicates areas of life where you may experience growth, optimism, and opportunities for advancement.",
+        "Jupiter": "Jupiter represents your growth opportunities, educational interests, and optimistic tendencies. Its position can indicate potential career advancements, learning paths that bring success, and how you handle expansion in business. Jupiter often relates to international connections, publishing opportunities, and areas where you might experience financial abundance.",
         
-        "Saturn": "Saturn represents discipline, responsibility, and life lessons. In Vedic astrology, it governs structure, limitations, hard work, and the wisdom gained through experience. Saturn's position indicates areas of life where you may face challenges that lead to maturity and mastery.",
+        "Saturn": "Saturn represents your discipline, structural needs, and areas requiring persistent effort. Its position can indicate career responsibilities, time management challenges, and long-term planning abilities. Saturn often manifests in professional achievements gained through consistent work, organizational skills, and how you handle authority figures.",
         
-        "Rahu": "Rahu (North Node) represents desire, ambition, and unfamiliar experiences. In Vedic astrology, it governs worldly obsessions, innovation, and breaking social norms. Rahu's position indicates areas of life where you seek growth through new, sometimes unconventional experiences.",
+        "Rahu": "Rahu (North Node) represents unfamiliar growth areas, progressive thinking, and innovative talents. Its position can indicate career fields where you can break new ground, technology adoption patterns, and unconventional relationship approaches. Rahu often correlates with areas where taking calculated risks leads to significant advancement.",
         
-        "Ketu": "Ketu (South Node) represents spiritual insight, detachment, and liberation. In Vedic astrology, it governs intuitive knowledge, past-life abilities, and release from materialistic desires. Ketu's position indicates areas of life where you may experience a sense of detachment or possess inherent spiritual wisdom.",
+        "Ketu": "Ketu (South Node) represents inherent skills, areas of natural detachment, and analytical abilities. Its position can indicate technical expertise you may take for granted, research capacities, and situations where you benefit from minimalist approaches. Ketu often relates to specialized knowledge, scientific thinking, and areas where you function well independently.",
         
-        "Uranus": "Uranus represents innovation, rebellion, and sudden change. In Vedic astrology (where it's a non-traditional planet), it governs originality, technological advances, and liberation from restrictions. Uranus's position indicates areas where you seek freedom and may experience unexpected breakthroughs.",
+        "Uranus": "Uranus represents your innovative thinking, adaptability to change, and technological aptitude. Its position can indicate which career fields might experience sudden shifts, where you're likely to implement progressive solutions, and your capacity for original thinking. Uranus often influences your approach to digital technologies and collaborative projects.",
         
-        "Neptune": "Neptune represents spirituality, intuition, and transcendence. In Vedic astrology (where it's a non-traditional planet), it governs mysticism, dreams, and dissolving boundaries. Neptune's position indicates areas where you may experience inspiration, compassion, or sometimes confusion and illusion.",
+        "Neptune": "Neptune represents your creative imagination, sensitivity to environments, and pattern recognition abilities. Its position can indicate potential in artistic fields, vulnerability to misinformation, and capacity for empathetic leadership. Neptune often manifests in photography skills, music appreciation, and your approach to healthcare and wellness.",
         
-        "Pluto": "Pluto represents transformation, power, and regeneration. In Vedic astrology (where it's a non-traditional planet), it governs deep psychological change, hidden resources, and rebirth. Pluto's position indicates areas of life where you may experience profound transformation and empowerment.",
+        "Pluto": "Pluto represents your capacity for in-depth analysis, resource management, and transformative leadership. Its position can indicate areas where you excel at research, power dynamics in professional settings, and psychological insight. Pluto often correlates with investigative abilities, financial strategy, and organizational restructuring skills.",
         
-        "Ascendant": "The Ascendant (or Lagna) represents your physical self and the way you present yourself to the world. It influences appearance, personality, and the first impression you make on others. The Ascendant is considered one of the most important points in a Vedic birth chart."
+        "Ascendant": "The Ascendant represents your natural physical energy patterns, first impression style, and practical approach to new situations. Its position strongly influences your body type, instinctive health habits, and personal presentation. The Ascendant manifests in how you adapt to different social and professional environments and often correlates with your natural strengths in first impressions."
     }
     
     # Return the description if available, otherwise a generic message
