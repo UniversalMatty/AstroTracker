@@ -79,17 +79,7 @@
                                 <input type="text" class="form-control" id="country" placeholder="e.g., United States" required>
                                 <div class="invalid-feedback">Please enter your birth country</div>
                             </div>
-                            <div class="mb-3">
-                                <label for="house-system" class="form-label">House System</label>
-                                <select class="form-select" id="house-system">
-                                    <option value="whole_sign" selected>Whole Sign Houses</option>
-                                    <option value="equal">Equal Houses</option>
-                                </select>
-                                <div class="form-text text-light">
-                                    <small><strong>Whole Sign:</strong> Each sign equals one house, with the Ascendant sign as the 1st house.</small><br>
-                                    <small><strong>Equal Houses:</strong> Houses are 30° each, with the Ascendant as the 1st house cusp.</small>
-                                </div>
-                            </div>
+                            <!-- House system selection removed - using Whole Sign only -->
                             <div class="d-grid">
                                 <button type="submit" class="btn btn-primary btn-lg" id="calculate-btn">
                                     Calculate Chart
@@ -154,7 +144,8 @@
                 const birthTime = document.getElementById('birth-time').value || '12:00';
                 const city = document.getElementById('city').value;
                 const country = document.getElementById('country').value;
-                const houseSystem = document.getElementById('house-system').value;
+                // Always use whole_sign system since selector was removed
+                const houseSystem = 'whole_sign';
                 
                 // Prepare API request
                 const data = {

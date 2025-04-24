@@ -110,43 +110,7 @@
             </div>
         </div>
         
-        <!-- House Cusps Section -->
-        {% if houses %}
-        <div class="card mb-4">
-            <div class="card-header bg-primary text-white">
-                <div class="d-flex justify-content-between align-items-center">
-                    <h3 class="mb-0">House Cusps ({{ houses[0].system }})</h3>
-                    <span class="badge bg-info" data-bs-toggle="tooltip" title="Calculated using Skyfield precision astronomical algorithms">
-                        <i class="fas fa-stars me-1"></i> High Precision
-                    </span>
-                </div>
-            </div>
-            <div class="card-body">
-                <!-- House system information removed as requested -->
-                <table class="table table-striped">
-                    <thead>
-                        <tr>
-                            <th>House</th>
-                            <th>Sign Position</th>
-                            <th>Meaning</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for house in houses %}
-                        <tr>
-                            <td>{{ house.house }}</td>
-                            <td class="sign-{{ house.sign.lower() }}">{{ house.formatted }}</td>
-                            <td>{{ house.meaning }}</td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-                <p class="text-muted">
-                    <small>House cusps calculated with Lahiri ayanamsa sidereal calculations.</small>
-                </p>
-            </div>
-        </div>
-        {% endif %}
+        <!-- House Cusps Section removed as requested -->
         
         <!-- Planet Descriptions Section -->
         <div class="card mb-4">
