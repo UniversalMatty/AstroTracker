@@ -221,26 +221,51 @@ def calculate_house_cusps(jd_ut, latitude, longitude, house_system="Equal Houses
             
             logging.debug(f"Ascendant: {ascendant['formatted']}")
             
-            # For Equal Houses system, simply add 30° for each house
-            houses = []
-            for i in range(1, 13):  # 12 houses
-                # House cusp = Ascendant + (i-1)*30°
-                house_longitude = (sidereal_asc + (i-1)*30) % 360
-                sign = get_zodiac_sign(house_longitude)
-                degree = house_longitude % 30
+            # Calculate houses based on the house system
+            houses_result = []
+            
+            if house_system == "Whole Sign":
+                # For Whole Sign houses, the 1st house starts at 0° of the sign that contains the ascendant
+                asc_sign_num = int(sidereal_asc / 30)
                 
-                houses.append({
-                    'house': i,
-                    'longitude': house_longitude,
-                    'sign': sign,
-                    'degree': degree,
-                    'formatted': f"{sign} {degree:.2f}°"
-                })
-                logging.debug(f"House {i}: {sign} {degree:.2f}°")
+                for i in range(1, 13):  # 12 houses
+                    # Each house is an entire sign
+                    house_sign_num = (asc_sign_num + i - 1) % 12
+                    house_longitude = house_sign_num * 30
+                    sign = get_zodiac_sign(house_longitude)
+                    degree = 0  # Always 0 degrees for Whole Sign
+                    
+                    houses_result.append({
+                        'house': i,
+                        'longitude': house_longitude,
+                        'sign': sign,
+                        'degree': degree,
+                        'formatted': f"{sign} {degree:.2f}°"
+                    })
+                    logging.debug(f"House {i}: {sign} {degree:.2f}°")
+            else:
+                # For Equal Houses and Placidus, use the house cusps from Swiss Ephemeris
+                for i in range(1, 13):  # 12 houses
+                    # The cusps array is 1-indexed
+                    tropical_house_longitude = houses[i]
+                    
+                    # Convert to sidereal
+                    house_longitude = (tropical_house_longitude - ayanamsa) % 360
+                    sign = get_zodiac_sign(house_longitude)
+                    degree = house_longitude % 30
+                    
+                    houses_result.append({
+                        'house': i,
+                        'longitude': house_longitude,
+                        'sign': sign,
+                        'degree': degree,
+                        'formatted': f"{sign} {degree:.2f}°"
+                    })
+                    logging.debug(f"House {i}: {sign} {degree:.2f}°")
             
             return {
                 'ascendant': ascendant,
-                'houses': houses
+                'houses': houses_result
             }
             
         except Exception as e:
