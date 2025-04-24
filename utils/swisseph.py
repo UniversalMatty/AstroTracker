@@ -235,33 +235,43 @@ def calculate_house_cusps(jd_ut, latitude, longitude, house_system="Equal Houses
                     sign = get_zodiac_sign(house_longitude)
                     degree = 0  # Always 0 degrees for Whole Sign
                     
+                    ruler = get_sign_ruler(sign)
                     houses_result.append({
                         'house': i,
                         'longitude': house_longitude,
                         'sign': sign,
                         'degree': degree,
-                        'formatted': f"{sign} {degree:.2f}°"
+                        'formatted': f"{sign} {degree:.2f}° ({ruler})"
                     })
                     logging.debug(f"House {i}: {sign} {degree:.2f}°")
             else:
                 # For Equal Houses and Placidus, use the house cusps from Swiss Ephemeris
-                for i in range(1, 13):  # 12 houses
-                    # The cusps array is 1-indexed
-                    tropical_house_longitude = houses[i]
+                for i in range(0, 12):  # 12 houses
+                    # The cusps array is 1-indexed in Swiss Ephemeris, so we use i+1
+                    # But we need to handle array bounds carefully
+                    if i+1 < len(houses):
+                        tropical_house_longitude = houses[i+1]
+                        
+                        # Convert to sidereal
+                        house_longitude = (tropical_house_longitude - ayanamsa) % 360
+                        sign = get_zodiac_sign(house_longitude)
+                        degree = house_longitude % 30
+                    else:
+                        # Fallback if house index out of range
+                        logging.error(f"House index {i+1} out of range for houses array length {len(houses)}")
+                        house_longitude = (sidereal_asc + (i*30)) % 360
+                        sign = get_zodiac_sign(house_longitude)
+                        degree = house_longitude % 30
                     
-                    # Convert to sidereal
-                    house_longitude = (tropical_house_longitude - ayanamsa) % 360
-                    sign = get_zodiac_sign(house_longitude)
-                    degree = house_longitude % 30
-                    
+                    ruler = get_sign_ruler(sign)
                     houses_result.append({
-                        'house': i,
+                        'house': i+1,  # Use 1-indexed house numbers for display
                         'longitude': house_longitude,
                         'sign': sign,
                         'degree': degree,
-                        'formatted': f"{sign} {degree:.2f}°"
+                        'formatted': f"{sign} {degree:.2f}° ({ruler})"
                     })
-                    logging.debug(f"House {i}: {sign} {degree:.2f}°")
+                    logging.debug(f"House {i+1}: {sign} {degree:.2f}°")
             
             return {
                 'ascendant': ascendant,
@@ -278,11 +288,13 @@ def calculate_house_cusps(jd_ut, latitude, longitude, house_system="Equal Houses
         # If everything fails, we'll create a basic template with placeholders
         # This ensures the UI won't break even if calculations fail
         
+        sign = 'Aries'
+        ruler = get_sign_ruler(sign)
         ascendant = {
             'longitude': 0,
-            'sign': 'Aries',
+            'sign': sign,
             'degree': 0,
-            'formatted': "Aries 0.00° (placeholder)"
+            'formatted': f"{sign} 0.00° ({ruler})"
         }
         
         houses = []
@@ -291,12 +303,13 @@ def calculate_house_cusps(jd_ut, latitude, longitude, house_system="Equal Houses
             sign = get_zodiac_sign(house_longitude)
             degree = 0
             
+            ruler = get_sign_ruler(sign)
             houses.append({
                 'house': i,
                 'longitude': house_longitude,
                 'sign': sign,
                 'degree': degree,
-                'formatted': f"{sign} 0.00° (placeholder)"
+                'formatted': f"{sign} 0.00° ({ruler})"
             })
         
         return {
@@ -433,3 +446,28 @@ def get_zodiac_sign(longitude):
     ]
     sign_index = int(longitude / 30)
     return signs[sign_index % 12]
+
+def get_sign_ruler(sign):
+    """
+    Get the modern planetary ruler of a zodiac sign.
+    
+    Parameters:
+    - sign: Zodiac sign name
+    
+    Returns the ruling planet as a string.
+    """
+    rulers = {
+        "Aries": "Mars",
+        "Taurus": "Venus",
+        "Gemini": "Mercury",
+        "Cancer": "Moon",
+        "Leo": "Sun",
+        "Virgo": "Mercury",
+        "Libra": "Venus",
+        "Scorpio": "Pluto",  # Modern ruler (Mars is traditional)
+        "Sagittarius": "Jupiter",
+        "Capricorn": "Saturn",
+        "Aquarius": "Uranus",  # Modern ruler (Saturn is traditional)
+        "Pisces": "Neptune"  # Modern ruler (Jupiter is traditional)
+    }
+    return rulers.get(sign, "Unknown")
