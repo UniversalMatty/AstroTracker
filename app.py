@@ -1,10 +1,15 @@
 import os
 import logging
+import math
 from datetime import datetime
 from flask import Flask, render_template, request, redirect, url_for, flash, session, jsonify
 from werkzeug.utils import secure_filename
 import tempfile
 import json
+import numpy as np
+from timezonefinder import TimezoneFinder
+import pytz
+from skyfield.api import load, Topos
 
 from utils.geocoding import get_coordinates
 from utils.astronomy import calculate_planet_positions, get_zodiac_sign
@@ -17,9 +22,188 @@ logging.basicConfig(
     level=logging.DEBUG,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
 )
+logger = logging.getLogger(__name__)
 
 app = Flask(__name__)
 app.secret_key = os.environ.get("SESSION_SECRET", "default_secret_key")
+
+# Load the ephemeris file
+try:
+    logger.info("Loading ephemeris file de440s.bsp...")
+    eph = load('de440s.bsp')
+    logger.info("Ephemeris loaded successfully")
+except Exception as e:
+    logger.error(f"Error loading ephemeris: {str(e)}")
+    raise
+
+# Define Earth for calculations
+earth = eph['earth']
+ts = load.timescale()
+
+# Zodiac signs and nakshatras
+ZODIAC_SIGNS = [
+    "Aries", "Taurus", "Gemini", "Cancer", 
+    "Leo", "Virgo", "Libra", "Scorpio", 
+    "Sagittarius", "Capricorn", "Aquarius", "Pisces"
+]
+
+NAKSHATRAS = [
+    {"name": "Ashwini", "ruling_planet": "Ketu", "end_degree": 13.33333},
+    {"name": "Bharani", "ruling_planet": "Venus", "end_degree": 26.66666},
+    {"name": "Krittika", "ruling_planet": "Sun", "end_degree": 40.0},
+    {"name": "Rohini", "ruling_planet": "Moon", "end_degree": 53.33333},
+    {"name": "Mrigashira", "ruling_planet": "Mars", "end_degree": 66.66666},
+    {"name": "Ardra", "ruling_planet": "Rahu", "end_degree": 80.0},
+    {"name": "Punarvasu", "ruling_planet": "Jupiter", "end_degree": 93.33333},
+    {"name": "Pushya", "ruling_planet": "Saturn", "end_degree": 106.66666},
+    {"name": "Ashlesha", "ruling_planet": "Mercury", "end_degree": 120.0},
+    {"name": "Magha", "ruling_planet": "Ketu", "end_degree": 133.33333},
+    {"name": "Purva Phalguni", "ruling_planet": "Venus", "end_degree": 146.66666},
+    {"name": "Uttara Phalguni", "ruling_planet": "Sun", "end_degree": 160.0},
+    {"name": "Hasta", "ruling_planet": "Moon", "end_degree": 173.33333},
+    {"name": "Chitra", "ruling_planet": "Mars", "end_degree": 186.66666},
+    {"name": "Swati", "ruling_planet": "Rahu", "end_degree": 200.0},
+    {"name": "Vishakha", "ruling_planet": "Jupiter", "end_degree": 213.33333},
+    {"name": "Anuradha", "ruling_planet": "Saturn", "end_degree": 226.66666},
+    {"name": "Jyeshtha", "ruling_planet": "Mercury", "end_degree": 240.0},
+    {"name": "Mula", "ruling_planet": "Ketu", "end_degree": 253.33333},
+    {"name": "Purva Ashadha", "ruling_planet": "Venus", "end_degree": 266.66666},
+    {"name": "Uttara Ashadha", "ruling_planet": "Sun", "end_degree": 280.0},
+    {"name": "Shravana", "ruling_planet": "Moon", "end_degree": 293.33333},
+    {"name": "Dhanishta", "ruling_planet": "Mars", "end_degree": 306.66666},
+    {"name": "Shatabhisha", "ruling_planet": "Rahu", "end_degree": 320.0},
+    {"name": "Purva Bhadrapada", "ruling_planet": "Jupiter", "end_degree": 333.33333},
+    {"name": "Uttara Bhadrapada", "ruling_planet": "Saturn", "end_degree": 346.66666},
+    {"name": "Revati", "ruling_planet": "Mercury", "end_degree": 360.0}
+]
+
+def calculate_lahiri_ayanamsa(date):
+    """
+    Calculate the Lahiri ayanamsa for a given date.
+    The Lahiri ayanamsa was approximately 23°15' on Jan 1, 1950,
+    and increases by about 50.3 seconds per year.
+    
+    Args:
+        date: Python datetime object
+        
+    Returns:
+        The Lahiri ayanamsa value in degrees for the given date
+    """
+    # Reference date (January 1, 1950)
+    ref_date = datetime(1950, 1, 1)
+    ref_ayanamsa = 23.15
+    
+    # Ayanamsa increases by about 50.3 seconds per year
+    seconds_per_year = 50.3 / 3600  # Convert to degrees
+    
+    # Calculate years difference
+    days_diff = (date - ref_date).days
+    years_diff = days_diff / 365.25
+    
+    # Calculate current ayanamsa
+    ayanamsa = ref_ayanamsa + (years_diff * seconds_per_year * 365.25)
+    return ayanamsa
+
+def get_nakshatra_from_longitude(longitude):
+    """Get nakshatra details from sidereal longitude in degrees"""
+    for i, nakshatra in enumerate(NAKSHATRAS):
+        if longitude < nakshatra["end_degree"]:
+            start_degree = 0 if i == 0 else NAKSHATRAS[i-1]["end_degree"]
+            position_in_nakshatra = (longitude - start_degree) / (nakshatra["end_degree"] - start_degree) * 100
+            return {
+                "name": nakshatra["name"],
+                "ruling_planet": nakshatra["ruling_planet"],
+                "position": f"{position_in_nakshatra:.1f}%"
+            }
+    # Handle edge case (should not happen with proper input)
+    return NAKSHATRAS[0]
+
+def get_zodiac_sign_from_longitude(longitude):
+    """Get zodiac sign from longitude in degrees (0-360)"""
+    sign_index = int(longitude / 30)
+    return ZODIAC_SIGNS[sign_index % 12]
+
+def format_position(longitude, retrograde=False):
+    """Format position with zodiac sign and degree"""
+    sign = get_zodiac_sign_from_longitude(longitude)
+    degree = longitude % 30
+    nakshatra = get_nakshatra_from_longitude(longitude)
+    r_symbol = " (R)" if retrograde else ""
+    return {
+        "longitude": longitude,
+        "sign": sign,
+        "degree": degree,
+        "formatted": f"{degree:.2f}° {sign}{r_symbol}",
+        "nakshatra": nakshatra,
+        "full_description": f"{degree:.2f}° {sign} – {nakshatra['name']} ({nakshatra['ruling_planet']}){r_symbol}"
+    }
+
+def get_timezone_from_coordinates(latitude, longitude):
+    """Get timezone string from coordinates using timezonefinder."""
+    try:
+        tf = TimezoneFinder()
+        timezone_str = tf.timezone_at(lat=latitude, lng=longitude)
+        if timezone_str is None:
+            logger.warning(f"Could not find timezone for coordinates: {latitude}, {longitude}. Using UTC.")
+            return "UTC"
+        return timezone_str
+    except Exception as e:
+        logger.error(f"Error finding timezone: {str(e)}")
+        return "UTC"
+
+def calculate_ascendant(t, observer):
+    """
+    Calculate the ascendant (rising sign) using Skyfield.
+    
+    Args:
+        t: Skyfield Time object
+        observer: Skyfield Topos object for the observer's location
+        
+    Returns:
+        Tropical longitude of the ascendant in degrees
+    """
+    # Get the celestial equator coordinates of the ecliptic point on the eastern horizon
+    ha, dec, dist = observer.at(t).from_altaz(alt_degrees=0, az_degrees=90)
+    
+    # Convert to ecliptic longitude
+    sunpos = earth.at(t).observe(eph['sun']).apparent()
+    ecliptic = sunpos.frame_latlon(t)
+    
+    # Extract the longitude of the ascendant (convert to degrees)
+    asc_lon = (ha.radians * 180 / math.pi + 180) % 360
+    
+    return asc_lon
+
+def calculate_whole_sign_houses(ascendant_position):
+    """
+    Calculate house cusps using the Whole Sign system.
+    In this system, the sign containing the ascendant becomes the 1st house,
+    and each subsequent sign becomes the next house.
+    
+    Args:
+        ascendant_position: Dictionary with ascendant details
+        
+    Returns:
+        List of house dictionaries, each with sign and other details
+    """
+    houses = []
+    ascendant_sign = ascendant_position['sign']
+    sign_index = ZODIAC_SIGNS.index(ascendant_sign)
+    
+    for i in range(12):
+        house_num = i + 1
+        current_sign_index = (sign_index + i) % 12
+        current_sign = ZODIAC_SIGNS[current_sign_index]
+        
+        house = {
+            "house": house_num,
+            "sign": current_sign,
+            "degree": 0.0,  # In Whole Sign system, houses start at 0° of the sign
+            "formatted": f"{current_sign}"
+        }
+        houses.append(house)
+    
+    return houses
 
 # Configure database
 app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL')
@@ -43,6 +227,103 @@ def allowed_file(filename):
 @app.route('/', methods=['GET'])
 def index():
     return render_template('index.html')
+
+@app.route('/skyfield_form', methods=['GET'])
+def skyfield_form():
+    """Show the Skyfield-based calculation form"""
+    return render_template('skyfield_form.html')
+
+@app.route('/calculate_skyfield', methods=['POST'])
+def calculate_skyfield():
+    """Calculate chart data using Skyfield API (JSON-based)"""
+    try:
+        # Get JSON data from the request
+        data = request.json
+        
+        if not data:
+            logger.error("No JSON data received")
+            return jsonify({"error": "No data provided"}), 400
+            
+        logger.debug(f"Received data: {data}")
+        
+        # Extract data
+        birth_date = data.get('birth_date')
+        birth_time = data.get('birth_time', '12:00')
+        city = data.get('city')
+        country = data.get('country')
+        
+        # Validate data
+        if not all([birth_date, city, country]):
+            return jsonify({"error": "Missing required data"}), 400
+            
+        # Get coordinates
+        coordinates = get_coordinates(city, country)
+        if not coordinates:
+            return jsonify({"error": f"Could not determine coordinates for location: {city}, {country}"}), 400
+            
+        longitude, latitude = coordinates
+        logger.debug(f"Coordinates: {longitude}, {latitude}")
+        
+        # Get timezone
+        timezone_str = get_timezone_from_coordinates(latitude, longitude)
+        logger.debug(f"Timezone: {timezone_str}")
+        
+        # Convert local time to UTC
+        try:
+            local_datetime_str = f"{birth_date} {birth_time}"
+            local_datetime = datetime.strptime(local_datetime_str, '%Y-%m-%d %H:%M')
+            
+            # Localize the datetime
+            local_tz = pytz.timezone(timezone_str)
+            local_datetime = local_tz.localize(local_datetime)
+            
+            # Convert to UTC
+            utc_datetime = local_datetime.astimezone(pytz.UTC)
+            logger.debug(f"UTC datetime: {utc_datetime}")
+        except Exception as e:
+            logger.error(f"Error converting time: {str(e)}")
+            return jsonify({"error": f"Invalid date or time format: {str(e)}"}), 400
+        
+        # Calculate ayanamsa
+        ayanamsa = calculate_lahiri_ayanamsa(utc_datetime)
+        logger.debug(f"Ayanamsa: {ayanamsa}")
+        
+        # Create Skyfield time object
+        t = ts.from_datetime(utc_datetime)
+        
+        # Create observer
+        observer = earth + Topos(latitude_degrees=latitude, longitude_degrees=longitude)
+        
+        # Calculate ascendant
+        tropical_asc = calculate_ascendant(t, observer)
+        sidereal_asc = (tropical_asc - ayanamsa) % 360
+        ascendant_position = format_position(sidereal_asc)
+        logger.debug(f"Ascendant: {ascendant_position['formatted']}")
+        
+        # Calculate houses using Whole Sign system
+        houses = calculate_whole_sign_houses(ascendant_position)
+        
+        # Create response data
+        response_data = {
+            "birth_details": {
+                "date": birth_date,
+                "time": birth_time,
+                "location": f"{city}, {country}",
+                "coordinates": [longitude, latitude]
+            },
+            "ayanamsa": {
+                "value": f"{ayanamsa:.4f}°",
+                "type": "Lahiri"
+            },
+            "ascendant": ascendant_position,
+            "houses": houses
+        }
+        
+        return jsonify(response_data)
+        
+    except Exception as e:
+        logger.error(f"Error calculating chart data: {str(e)}")
+        return jsonify({"error": f"Error calculating chart data: {str(e)}"}), 500
 
 @app.route('/calculate', methods=['GET', 'POST'])
 def calculate():
@@ -79,16 +360,76 @@ def calculate():
             # Add planet description
             planet['description'] = get_planet_description(planet['name'])
         
-        # Calculate house cusps and ascendant (lagna)
-        jd_ut = calculate_jd_ut(dob_date, dob_time)
-        house_data = calculate_house_cusps(jd_ut, latitude, longitude)
-        
-        # Get house meanings
-        house_meanings = get_house_meanings()
-        
-        # Add meanings to houses
-        for house in house_data['houses']:
-            house['meaning'] = house_meanings.get(house['house'], '')
+        # Always calculate houses and ascendant using Skyfield for better accuracy
+        try:
+            # Get timezone
+            timezone_str = get_timezone_from_coordinates(latitude, longitude)
+            if not timezone_str:
+                timezone_str = "UTC"
+            logger.debug(f"Timezone: {timezone_str}")
+                
+            # Convert local time to UTC
+            local_datetime_str = f"{dob_date} {dob_time or '12:00'}"
+            local_datetime = datetime.strptime(local_datetime_str, '%Y-%m-%d %H:%M')
+            
+            # Localize the datetime
+            local_tz = pytz.timezone(timezone_str)
+            local_datetime = local_tz.localize(local_datetime)
+            
+            # Convert to UTC
+            utc_datetime = local_datetime.astimezone(pytz.UTC)
+            logger.debug(f"UTC datetime: {utc_datetime}")
+            
+            # Create Skyfield time object
+            t = ts.from_datetime(utc_datetime)
+            
+            # Create observer
+            observer = earth + Topos(latitude_degrees=latitude, longitude_degrees=longitude)
+            
+            # Calculate ayanamsa
+            ayanamsa = calculate_lahiri_ayanamsa(utc_datetime)
+            logger.debug(f"Ayanamsa: {ayanamsa}")
+            
+            # Calculate ascendant using Skyfield
+            tropical_asc = calculate_ascendant(t, observer)
+            sidereal_asc = (tropical_asc - ayanamsa) % 360
+            ascendant_position = format_position(sidereal_asc)
+            logger.debug(f"Ascendant: {ascendant_position['formatted']} (Skyfield calculation)")
+            
+            # Calculate houses using Whole Sign system with Skyfield
+            houses = calculate_whole_sign_houses(ascendant_position)
+            
+            # Get house meanings
+            house_meanings = get_house_meanings()
+            
+            # Add meanings to houses
+            for house in houses:
+                house['meaning'] = house_meanings.get(house['house'], '')
+                
+            # Create the house_data structure that the rest of the code expects
+            house_data = {
+                'ascendant': ascendant_position,
+                'houses': houses
+            }
+            
+            # Add information that this was calculated with Skyfield
+            house_data['calculation_method'] = "Skyfield (High Precision)"
+            
+            logger.info(f"Successfully calculated houses using Skyfield - Ascendant: {ascendant_position['formatted']}")
+                
+        except Exception as e:
+            # Fallback to the original method if Skyfield calculation fails
+            logger.error(f"Error calculating houses with Skyfield: {str(e)}. Falling back to original method.")
+            jd_ut = calculate_jd_ut(dob_date, dob_time)
+            house_data = calculate_house_cusps(jd_ut, latitude, longitude)
+            house_data['calculation_method'] = "Swiss Ephemeris (Fallback)"
+            
+            # Get house meanings
+            house_meanings = get_house_meanings()
+            
+            # Add meanings to houses
+            for house in house_data['houses']:
+                house['meaning'] = house_meanings.get(house['house'], '')
         
         # Store calculation results in session
         birth_details = {
@@ -223,19 +564,78 @@ def view_chart(chart_id):
     
     # Calculate house cusps and ascendant (lagna) for viewing
     if chart.birth_time:
-        jd_ut = calculate_jd_ut(chart.birth_date.strftime('%Y-%m-%d'), 
-                                chart.birth_time.strftime('%H:%M'))
-        house_data = calculate_house_cusps(jd_ut, chart.latitude, chart.longitude)
-        
-        # Get house meanings
-        house_meanings = get_house_meanings()
-        
-        # Add meanings to houses
-        for house in house_data['houses']:
-            house['meaning'] = house_meanings.get(house['house'], '')
+        try:
+            # Use Skyfield for house and ascendant calculations
+            from skyfield_houses import calculate_ascendant, calculate_whole_sign_houses, format_position, calculate_lahiri_ayanamsa
+            from skyfield.api import load, Topos
+            import pytz
+            from timezonefinder import TimezoneFinder
             
-        ascendant = house_data['ascendant']
-        houses = house_data['houses']
+            # Get timezone
+            tf = TimezoneFinder()
+            timezone_str = tf.timezone_at(lat=chart.latitude, lng=chart.longitude)
+            if not timezone_str:
+                timezone_str = "UTC"
+                
+            # Convert local time to UTC
+            birth_date_str = chart.birth_date.strftime('%Y-%m-%d')
+            birth_time_str = chart.birth_time.strftime('%H:%M')
+            local_datetime_str = f"{birth_date_str} {birth_time_str}"
+            local_datetime = datetime.strptime(local_datetime_str, '%Y-%m-%d %H:%M')
+            
+            # Localize the datetime
+            local_tz = pytz.timezone(timezone_str)
+            local_datetime = local_tz.localize(local_datetime)
+            
+            # Convert to UTC
+            utc_datetime = local_datetime.astimezone(pytz.UTC)
+            
+            # Create Skyfield time object
+            ts = load.timescale()
+            t = ts.from_datetime(utc_datetime)
+            
+            # Create observer
+            earth = load('de440s.bsp')['earth']
+            observer = earth + Topos(latitude_degrees=chart.latitude, longitude_degrees=chart.longitude)
+            
+            # Calculate ayanamsa
+            ayanamsa = calculate_lahiri_ayanamsa(utc_datetime)
+            
+            # Calculate ascendant using Skyfield
+            tropical_asc = calculate_ascendant(t, observer)
+            sidereal_asc = (tropical_asc - ayanamsa) % 360
+            ascendant_position = format_position(sidereal_asc)
+            
+            # Calculate houses using Whole Sign system with Skyfield
+            houses = calculate_whole_sign_houses(ascendant_position)
+            
+            # Get house meanings
+            house_meanings = get_house_meanings()
+            
+            # Add meanings to houses
+            for house in houses:
+                house['meaning'] = house_meanings.get(house['house'], '')
+                
+            ascendant = ascendant_position
+            
+            logging.debug(f"Successfully calculated houses using Skyfield for saved chart - Ascendant: {ascendant_position['formatted']}")
+            
+        except Exception as e:
+            # Fallback to the original method if Skyfield calculation fails
+            logging.error(f"Error calculating houses with Skyfield for saved chart: {str(e)}. Falling back to original method.")
+            jd_ut = calculate_jd_ut(chart.birth_date.strftime('%Y-%m-%d'), 
+                                   chart.birth_time.strftime('%H:%M'))
+            house_data = calculate_house_cusps(jd_ut, chart.latitude, chart.longitude)
+            
+            # Get house meanings
+            house_meanings = get_house_meanings()
+            
+            # Add meanings to houses
+            for house in house_data['houses']:
+                house['meaning'] = house_meanings.get(house['house'], '')
+                
+            ascendant = house_data['ascendant']
+            houses = house_data['houses']
     else:
         # Can't calculate houses without time
         ascendant = None

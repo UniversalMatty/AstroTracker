@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Your Energetic Blueprint - Skyfield Precision</title>
+    <link href="https://cdn.replit.com/agent/bootstrap-agent-dark-theme.min.css" rel="stylesheet">
+    <style>
+        .houses-container {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 1rem;
+        }
+        @media (max-width: 992px) {
+            .houses-container {
+                grid-template-columns: repeat(3, 1fr);
+            }
+        }
+        @media (max-width: 768px) {
+            .houses-container {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+        @media (max-width: 576px) {
+            .houses-container {
+                grid-template-columns: 1fr;
+            }
+        }
+        .ascendant {
+            margin-bottom: 2rem;
+            padding: 1.5rem;
+            border-radius: 0.5rem;
+            border-left: 5px solid var(--bs-info);
+        }
+        .result-section {
+            margin-top: 2rem;
+            padding-top: 2rem;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .nakshatra-info {
+            font-size: 0.9rem;
+            color: var(--bs-light);
+            margin-top: 0.5rem;
+        }
+    </style>
+</head>
+<body class="bg-dark text-light">
+    <div class="container py-5">
+        <header class="text-center mb-5">
+            <h1 class="display-4">Your Energetic Blueprint</h1>
+            <p class="lead">Map of Your Energetic System - Using Skyfield Precision</p>
+        </header>
+
+        <div class="row">
+            <div class="col-lg-6 mx-auto">
+                <div class="card bg-dark border-secondary mb-4">
+                    <div class="card-header bg-dark border-secondary">
+                        <h2 class="h4 mb-0">Enter Birth Details</h2>
+                    </div>
+                    <div class="card-body">
+                        <form id="birth-form" class="needs-validation" novalidate>
+                            <div class="mb-3">
+                                <label for="birth-date" class="form-label">Birth Date*</label>
+                                <input type="date" class="form-control" id="birth-date" required>
+                                <div class="invalid-feedback">Please enter your birth date</div>
+                            </div>
+                            <div class="mb-3">
+                                <label for="birth-time" class="form-label">Birth Time (if known)</label>
+                                <input type="time" class="form-control" id="birth-time">
+                                <small class="text-muted">Leave blank if unknown</small>
+                            </div>
+                            <div class="mb-3">
+                                <label for="city" class="form-label">Birth City*</label>
+                                <input type="text" class="form-control" id="city" placeholder="e.g., New York" required>
+                                <div class="invalid-feedback">Please enter your birth city</div>
+                            </div>
+                            <div class="mb-3">
+                                <label for="country" class="form-label">Birth Country*</label>
+                                <input type="text" class="form-control" id="country" placeholder="e.g., United States" required>
+                                <div class="invalid-feedback">Please enter your birth country</div>
+                            </div>
+                            <div class="d-grid">
+                                <button type="submit" class="btn btn-primary btn-lg" id="calculate-btn">
+                                    Calculate Chart
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="loading" class="text-center my-5 d-none">
+            <div class="spinner-border text-info" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+            <p class="mt-2">Calculating your chart with high precision...</p>
+        </div>
+
+        <div id="results" class="d-none">
+            <div class="alert alert-info" role="alert">
+                <span id="birth-details"></span>
+                <div><strong>Ayanamsa:</strong> <span id="ayanamsa-value"></span></div>
+            </div>
+
+            <div class="ascendant card bg-dark border-info">
+                <div class="card-body">
+                    <h3 class="card-title">Ascendant (Lagna)</h3>
+                    <h4 class="h2" id="ascendant-value"></h4>
+                    <div class="nakshatra-info" id="ascendant-nakshatra"></div>
+                </div>
+            </div>
+
+            <div class="result-section">
+                <h3 class="mb-4">Houses (Whole Sign System)</h3>
+                <div class="houses-container" id="houses-container"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const form = document.getElementById('birth-form');
+            const loading = document.getElementById('loading');
+            const results = document.getElementById('results');
+            
+            form.addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                // Form validation
+                if (!form.checkValidity()) {
+                    e.stopPropagation();
+                    form.classList.add('was-validated');
+                    return;
+                }
+                
+                // Show loading spinner
+                loading.classList.remove('d-none');
+                results.classList.add('d-none');
+                
+                // Collect form data
+                const birthDate = document.getElementById('birth-date').value;
+                const birthTime = document.getElementById('birth-time').value || '12:00';
+                const city = document.getElementById('city').value;
+                const country = document.getElementById('country').value;
+                
+                // Prepare API request
+                const data = {
+                    birth_date: birthDate,
+                    birth_time: birthTime,
+                    city: city,
+                    country: country
+                };
+                
+                // Call API
+                fetch('/calculate', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(data)
+                })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    displayResults(data);
+                    loading.classList.add('d-none');
+                    results.classList.remove('d-none');
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('An error occurred while calculating the chart. Please try again.');
+                    loading.classList.add('d-none');
+                });
+            });
+            
+            function displayResults(data) {
+                // Display birth details
+                const birthDetails = document.getElementById('birth-details');
+                birthDetails.textContent = `Birth details: ${data.birth_details.date} at ${data.birth_details.time} in ${data.birth_details.location}`;
+                
+                // Display ayanamsa
+                document.getElementById('ayanamsa-value').textContent = data.ayanamsa.value;
+                
+                // Display ascendant
+                document.getElementById('ascendant-value').textContent = data.ascendant.formatted;
+                document.getElementById('ascendant-nakshatra').textContent = 
+                    `Nakshatra: ${data.ascendant.nakshatra.name} (${data.ascendant.nakshatra.ruling_planet}) - ${data.ascendant.nakshatra.position}`;
+                
+                // Display houses
+                const housesContainer = document.getElementById('houses-container');
+                housesContainer.innerHTML = '';
+                
+                if (data.houses) {
+                    data.houses.forEach(house => {
+                        const houseDiv = document.createElement('div');
+                        houseDiv.className = 'card bg-dark border-secondary';
+                        
+                        const houseBody = document.createElement('div');
+                        houseBody.className = 'card-body';
+                        
+                        const houseTitle = document.createElement('h5');
+                        houseTitle.className = 'card-title';
+                        houseTitle.textContent = `House ${house.house}`;
+                        
+                        const houseSign = document.createElement('p');
+                        houseSign.className = 'h6 mb-0';
+                        houseSign.textContent = house.sign;
+                        
+                        houseBody.appendChild(houseTitle);
+                        houseBody.appendChild(houseSign);
+                        houseDiv.appendChild(houseBody);
+                        housesContainer.appendChild(houseDiv);
+                    });
+                }
+            }
+        });
+    </script>
+</body>
+</html>
