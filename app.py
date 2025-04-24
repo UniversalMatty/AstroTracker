@@ -65,45 +65,9 @@ def calculate():
             flash('Could not determine coordinates for the given location', 'danger')
             return redirect(url_for('index'))
         
-        # Calculate planetary positions using PyEphem (dynamic calculation)
+        # Calculate planetary positions (incl. Rahu and Ketu) using Swiss Ephemeris
         longitude, latitude = coordinates
         planets = calculate_planet_positions(dob_date, dob_time, longitude, latitude)
-        
-        # Add Rahu and Ketu (North and South Lunar Nodes)
-        # Find Moon's position
-        moon_position = next((p['longitude'] for p in planets if p['name'] == 'Moon'), None)
-        
-        if moon_position is not None:
-            # Rahu (North Node) is approximately 180° opposite the Moon's position
-            rahu_longitude = (moon_position + 180) % 360
-            rahu_sign = get_zodiac_sign(rahu_longitude)
-            rahu_degree = rahu_longitude % 30
-            
-            # Ketu (South Node) is exactly opposite Rahu
-            ketu_longitude = (rahu_longitude + 180) % 360
-            ketu_sign = get_zodiac_sign(ketu_longitude)
-            ketu_degree = ketu_longitude % 30
-            
-            # Add Rahu to planets
-            rahu_entry = {
-                'name': 'Rahu',
-                'longitude': rahu_longitude,
-                'formatted_position': f"{rahu_sign} {rahu_degree:.2f}°",
-                'sign': rahu_sign,
-                'retrograde': False
-            }
-            
-            # Add Ketu to planets
-            ketu_entry = {
-                'name': 'Ketu',
-                'longitude': ketu_longitude,
-                'formatted_position': f"{ketu_sign} {ketu_degree:.2f}°",
-                'sign': ketu_sign,
-                'retrograde': False
-            }
-            
-            planets.append(rahu_entry)
-            planets.append(ketu_entry)
         
         # Get nakshatra for each planet
         for planet in planets:
