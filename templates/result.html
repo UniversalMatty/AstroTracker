@@ -107,6 +107,38 @@
             </div>
         </div>
         
+        <!-- House Cusps Section -->
+        {% if houses %}
+        <div class="card mb-4">
+            <div class="card-header bg-primary text-white">
+                <h3 class="mb-0">House Cusps</h3>
+            </div>
+            <div class="card-body">
+                <table class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th>House</th>
+                            <th>Sign Position</th>
+                            <th>Meaning</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for house in houses %}
+                        <tr>
+                            <td>{{ house.house }}</td>
+                            <td class="sign-{{ house.sign.lower() }}">{{ house.formatted }}</td>
+                            <td>{{ house.meaning }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                <p class="text-muted">
+                    <small>House cusps calculated with Lahiri ayanamsa sidereal calculations.</small>
+                </p>
+            </div>
+        </div>
+        {% endif %}
+        
         <!-- Planet Descriptions Section -->
         <div class="card mb-4">
             <div class="card-header bg-secondary text-white">
@@ -197,7 +229,7 @@
         <footer class="text-center my-4">
             <p class="text-muted">
                 <small>
-                    Your Cosmic Blueprint Calculator &copy; 2025 | 
+                    Your Spiritual Blueprint &copy; 2025 | 
                     Using Lahiri ayanamsa and authentic sidereal calculations
                 </small>
             </p>
