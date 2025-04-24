@@ -134,14 +134,13 @@ def tropical_to_sidereal(longitude, jd_ut):
         logging.error(f"Error converting tropical to sidereal: {str(e)}")
         raise
 
-def calculate_planet_position(planet_id, jd_ut, use_calibration=False):
+def calculate_planet_position(planet_id, jd_ut):
     """
     Calculate planet position using Swiss Ephemeris.
     
     Parameters:
     - planet_id: Swiss Ephemeris planet ID (e.g., swe.SUN, swe.MOON)
     - jd_ut: Julian Day in Universal Time
-    - use_calibration: Whether to use special calibration to match reference charts
     
     Returns a tuple of:
     - tropical_longitude: Longitude in tropical zodiac

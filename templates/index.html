@@ -79,10 +79,24 @@
                                 </div>
                             </div>
                             
-                            <!-- No advanced options needed -->
-                            <!-- We've removed the ephemerides upload section as it's not needed anymore -->
+                            <!-- Advanced options section -->
+                            <div class="form-section mt-4">
+                                <h4 class="mb-3">Advanced Options</h4>
+                                
+                                <div class="form-check mb-3">
+                                    <input class="form-check-input" type="checkbox" id="use_calibration" name="use_calibration">
+                                    <label class="form-check-label" for="use_calibration">
+                                        Use special calibration for house calculations
+                                    </label>
+                                    <div class="form-text text-muted">
+                                        Enable this option to match reference charts from certain online calculators. 
+                                        This applies a special ayanamsa offset to house and ascendant calculations only.
+                                        <span class="text-warning">Note: This does not affect planetary positions.</span>
+                                    </div>
+                                </div>
+                            </div>
                             
-                            <div class="d-grid gap-2">
+                            <div class="d-grid gap-2 mt-4">
                                 <button type="submit" class="btn btn-primary btn-lg">
                                     <i class="fas fa-calculator me-2"></i> Calculate Astrological Data
                                 </button>
