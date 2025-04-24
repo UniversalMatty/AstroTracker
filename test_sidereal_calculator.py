@@ -230,11 +230,23 @@ def calculate_planets(jd):
     for planet_name, planet_id in planets.items():
         # Calculate planet position
         flags = swe.FLG_SWIEPH | swe.FLG_SPEED
-        ret, result = swe.calc_ut(jd, planet_id, flags)
+        result = swe.calc_ut(jd, planet_id, flags)
         
         # Extract longitude and speed
-        longitude = result[0]
-        speed = result[3]  # daily speed in longitude
+        if isinstance(result, tuple) and len(result) >= 2:
+            ret = result[0]
+            positions = result[1]
+            if isinstance(positions, list) and len(positions) > 3:
+                longitude = positions[0]
+                speed = positions[3]  # daily speed in longitude
+            else:
+                print(f"Warning: Unexpected result format for {planet_name}")
+                longitude = 0
+                speed = 0
+        else:
+            print(f"Warning: Could not calculate position for {planet_name}")
+            longitude = 0
+            speed = 0
         
         # Convert tropical to sidereal
         sidereal_longitude = longitude - ayanamsa
