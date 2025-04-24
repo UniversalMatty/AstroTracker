@@ -249,15 +249,24 @@ def calculate_house_cusps(jd_ut, latitude, longitude, house_system="Equal Houses
             if house_system == "Whole Sign":
                 # For Whole Sign houses, the 1st house starts at 0° of the sign that contains the ascendant
                 asc_sign_num = int(sidereal_asc / 30)
+                logging.debug(f"Ascendant sign number: {asc_sign_num}")
                 
+                # The first house (1) always starts at the beginning (0°) of the sign that contains the ascendant
                 for i in range(1, 13):  # 12 houses
-                    # Each house is an entire sign
+                    # Each house is an entire sign, starting with the ascendant sign for house 1
                     house_sign_num = (asc_sign_num + i - 1) % 12
-                    house_longitude = house_sign_num * 30
+                    house_longitude = house_sign_num * 30  # Each house starts at 0° of its sign
                     sign = get_zodiac_sign(house_longitude)
-                    degree = 0  # Always 0 degrees for Whole Sign
+                    degree = 0  # Always 0 degrees for Whole Sign houses
                     
                     ruler = get_sign_ruler(sign)
+                    
+                    # Special case for house 1 - it should match the ascendant sign
+                    if i == 1:
+                        logging.debug(f"House 1 matches ascendant sign: {sidereal_asc_sign}")
+                        # We ensure house 1 is set to the same sign as the ascendant
+                        sign = sidereal_asc_sign
+                    
                     houses_result.append({
                         'house': i,
                         'longitude': house_longitude,
@@ -268,32 +277,73 @@ def calculate_house_cusps(jd_ut, latitude, longitude, house_system="Equal Houses
                     logging.debug(f"House {i}: {sign} {degree:.2f}°")
             else:
                 # For Equal Houses and Placidus, use the house cusps from Swiss Ephemeris
-                for i in range(0, 12):  # 12 houses
-                    # The cusps array is 1-indexed in Swiss Ephemeris, so we use i+1
-                    # But we need to handle array bounds carefully
-                    if i+1 < len(houses):
-                        tropical_house_longitude = houses[i+1]
-                        
-                        # Convert to sidereal
-                        house_longitude = (tropical_house_longitude - ayanamsa) % 360
-                        sign = get_zodiac_sign(house_longitude)
-                        degree = house_longitude % 30
-                    else:
-                        # Fallback if house index out of range
-                        logging.error(f"House index {i+1} out of range for houses array length {len(houses)}")
-                        house_longitude = (sidereal_asc + (i*30)) % 360
-                        sign = get_zodiac_sign(house_longitude)
-                        degree = house_longitude % 30
+                for i in range(0, 12):  # 12 houses, 0-indexed loop
+                    house_num = i + 1  # Convert to 1-indexed house number for display
                     
-                    ruler = get_sign_ruler(sign)
-                    houses_result.append({
-                        'house': i+1,  # Use 1-indexed house numbers for display
-                        'longitude': house_longitude,
-                        'sign': sign,
-                        'degree': degree,
-                        'formatted': f"{sign} {degree:.2f}° ({ruler})"
-                    })
-                    logging.debug(f"House {i+1}: {sign} {degree:.2f}°")
+                    try:
+                        # For some Swiss Ephemeris versions, the houses array is 13 elements 
+                        # (elements 1-12 are the houses, element 0 is unused)
+                        # For others, it might be 12 elements (0-11)
+                        # We need to handle both cases safely
+                        
+                        try:
+                            # Try to access the house position at index i+1 (1-indexed)
+                            # This will work for the Swiss Ephemeris versions where houses is a 13-element array
+                            if i+1 < len(houses):
+                                tropical_house_longitude = houses[i+1]
+                                logging.debug(f"Using house position from index {i+1}")
+                            # If houses is only 12 elements (0-indexed), try index i instead
+                            elif i < len(houses):
+                                tropical_house_longitude = houses[i]
+                                logging.debug(f"Using house position from index {i}")
+                            else:
+                                # Fallback if both indices are out of range
+                                raise IndexError(f"House index {i+1} and {i} out of range for houses array length {len(houses)}")
+                                
+                            # Convert to sidereal
+                            house_longitude = (tropical_house_longitude - ayanamsa) % 360
+                            sign = get_zodiac_sign(house_longitude)
+                            degree = house_longitude % 30
+                        except Exception as e:
+                            # Fallback calculation if we can't get the house position
+                            logging.error(f"Error accessing house position: {str(e)}")
+                            house_longitude = (sidereal_asc + (i*30)) % 360
+                            sign = get_zodiac_sign(house_longitude)
+                            degree = house_longitude % 30
+                            logging.debug(f"Using fallback house position {house_longitude:.2f}°")
+                        
+                        # Special case for house 1
+                        if house_num == 1:
+                            # For consistency, in Equal Houses and Placidus, the first house should
+                            # start at the exact ascendant point, not at the beginning of the sign
+                            logging.debug(f"Adjusting house 1 to match ascendant: {sidereal_asc_sign} {sidereal_asc_degree:.2f}°")
+                            
+                            # We'll use the exact ascendant details for better accuracy
+                            house_longitude = sidereal_asc
+                            sign = sidereal_asc_sign
+                            degree = sidereal_asc_degree
+                        
+                        ruler = get_sign_ruler(sign)
+                        houses_result.append({
+                            'house': house_num, 
+                            'longitude': house_longitude,
+                            'sign': sign,
+                            'degree': degree,
+                            'formatted': f"{sign} {degree:.2f}° ({ruler})"
+                        })
+                        logging.debug(f"House {house_num}: {sign} {degree:.2f}°")
+                    except Exception as e:
+                        logging.error(f"Error processing house {house_num}: {str(e)}")
+                        # Create a default house in case of error
+                        sign = get_zodiac_sign((sidereal_asc + (i*30)) % 360)
+                        ruler = get_sign_ruler(sign)
+                        houses_result.append({
+                            'house': house_num,
+                            'longitude': (sidereal_asc + (i*30)) % 360,
+                            'sign': sign,
+                            'degree': 0,
+                            'formatted': f"{sign} 0.00° ({ruler})"
+                        })
             
             return {
                 'ascendant': ascendant,
@@ -310,16 +360,22 @@ def calculate_house_cusps(jd_ut, latitude, longitude, house_system="Equal Houses
         # If everything fails, we'll create a basic template with placeholders
         # This ensures the UI won't break even if calculations fail
         
+        # For the placeholder values, we'll create a simple Aries ascendant chart
+        # with houses that follow in zodiacal order
         sign = 'Aries'
         ruler = get_sign_ruler(sign)
+        
+        # Mark this as a placeholder to show it's not actual calculated data
         ascendant = {
             'longitude': 0,
             'sign': sign,
             'degree': 0,
-            'formatted': f"{sign} 0.00° ({ruler})"
+            'formatted': f"{sign} 0.00° ({ruler}) [placeholder]"
         }
         
         houses = []
+        
+        # Create houses in zodiacal order, starting with Aries for house 1
         for i in range(1, 13):
             house_longitude = (i-1) * 30  # Simple 30-degree spacing
             sign = get_zodiac_sign(house_longitude)
@@ -331,7 +387,7 @@ def calculate_house_cusps(jd_ut, latitude, longitude, house_system="Equal Houses
                 'longitude': house_longitude,
                 'sign': sign,
                 'degree': degree,
-                'formatted': f"{sign} 0.00° ({ruler})"
+                'formatted': f"{sign} 0.00° ({ruler}) [placeholder]"
             })
         
         return {
