@@ -539,64 +539,32 @@ def calculate():
         ayanamsa = calculate_lahiri_ayanamsa(utc_datetime)
         logging.debug(f"Ayanamsa: {ayanamsa}")
         
-        # Calculate ascendant using Skyfield
+        # Calculate ascendant using Swiss Ephemeris (same as planets)
         try:
-            logging.debug("About to calculate ascendant...")
-            # Debug observer object structure
-            logging.debug(f"Observer object type: {type(observer)}")
-            for key in dir(observer):
-                if not key.startswith('_'):
-                    try:
-                        value = getattr(observer, key)
-                        logging.debug(f"Observer.{key}: {type(value)}")
-                    except:
-                        logging.debug(f"Observer.{key}: <cannot access>")
+            logging.debug("About to calculate ascendant using Swiss Ephemeris...")
             
-            # Debug observer.target object
-            if hasattr(observer, 'target'):
-                logging.debug(f"Observer has target attribute of type: {type(observer.target)}")
-                for key in dir(observer.target):
-                    if not key.startswith('_'):
-                        try:
-                            value = getattr(observer.target, key)
-                            logging.debug(f"Observer.target.{key}: {type(value)}")
-                        except:
-                            logging.debug(f"Observer.target.{key}: <cannot access>")
+            # Import Swiss Ephemeris house calculation function
+            from utils.swisseph import calculate_houses_and_ascendant
             
-            # The original latitude/longitude values used to create the observer
-            logging.debug(f"Original latitude: {latitude}, longitude: {longitude}")
+            # Calculate using Julian Day from the same time used for planets
+            # This ensures consistency between planet and ascendant calculations
+            houses_and_ascendant = calculate_houses_and_ascendant(jd_ut, latitude, longitude)
             
-            # Try direct manual calculation with known values
-            from skyfield.constants import tau
+            # Extract sidereal ascendant directly
+            sidereal_asc = houses_and_ascendant.get('ascendant_longitude', 0.0)
             
-            # Get Local Sidereal Time 
-            greenwich_sidereal_hours = t.gmst
-            greenwich_sidereal_radians = greenwich_sidereal_hours * tau / 24.0
-            
-            # Add longitude to get LST
-            longitude_radians = math.radians(longitude)
-            lst_radians = greenwich_sidereal_radians + longitude_radians
-            lst_radians = lst_radians % tau
-            
-            # Obliquity of ecliptic
-            obliquity_radians = math.radians(23.4392911)
-            
-            # Observer's latitude 
-            latitude_radians = math.radians(latitude)
-            
-            # Calculate ascendant directly
-            tan_term = math.tan(latitude_radians) * math.cos(obliquity_radians)
-            sin_lst = math.sin(lst_radians)
-            cos_lst = math.cos(lst_radians)
-            denominator = sin_lst * math.cos(obliquity_radians) + tan_term * math.sin(obliquity_radians)
-            ascendant_radians = math.atan2(-cos_lst, denominator)
-            tropical_asc = math.degrees(ascendant_radians) % 360
-            
-            logging.debug(f"Manual tropical ascendant calculation: {tropical_asc}")
-            sidereal_asc = (tropical_asc - ayanamsa) % 360
-            logging.debug(f"Sidereal ascendant: {sidereal_asc}")
+            # Log the calculation details
+            logging.debug(f"Swiss Ephemeris sidereal ascendant: {sidereal_asc}")
             ascendant_position = format_position(sidereal_asc)
-            logging.debug(f"Ascendant: {ascendant_position['formatted']} (Manual calculation)")
+            logging.debug(f"Ascendant: {ascendant_position['formatted']} (Swiss Ephemeris calculation)")
+            
+            # Also log the tropical ascendant for debugging
+            tropical_asc = houses_and_ascendant.get('tropical_ascendant', 0.0)
+            actual_ayanamsa = houses_and_ascendant.get('ayanamsa', 0.0)
+            logging.debug(f"Tropical ascendant: {tropical_asc}")
+            logging.debug(f"Ayanamsa used: {actual_ayanamsa}")
+            logging.debug(f"Conversion check: {tropical_asc} - {actual_ayanamsa} = {(tropical_asc - actual_ayanamsa) % 360}")
+            
         except Exception as asc_error:
             logging.error(f"DETAILED Ascendant calculation error: {str(asc_error)}")
             logging.error(f"Error type: {type(asc_error).__name__}")
@@ -791,41 +759,34 @@ def view_chart(chart_id):
         # Calculate ayanamsa
         ayanamsa = calculate_lahiri_ayanamsa(utc_datetime)
         
-        # Calculate ascendant using manual calculation in view_chart
+        # Calculate ascendant using Swiss Ephemeris in view_chart
         try:
-            logging.debug("About to calculate ascendant in view_chart...")
+            logging.debug("About to calculate ascendant in view_chart using Swiss Ephemeris...")
             
-            # Try direct manual calculation with known values
-            from skyfield.constants import tau
+            # Calculate Julian Day for Swiss Ephemeris
+            from utils.swisseph import calculate_jd_ut, calculate_houses_and_ascendant
             
-            # Get Local Sidereal Time 
-            greenwich_sidereal_hours = t.gmst
-            greenwich_sidereal_radians = greenwich_sidereal_hours * tau / 24.0
+            # Get Julian Day from birth date and time
+            birth_date_str = chart.birth_date.strftime('%Y-%m-%d')
+            birth_time_str = chart.birth_time.strftime('%H:%M')
+            jd_ut = calculate_jd_ut(birth_date_str, birth_time_str)
             
-            # Add longitude to get LST
-            longitude_radians = math.radians(chart.longitude)
-            lst_radians = greenwich_sidereal_radians + longitude_radians
-            lst_radians = lst_radians % tau
+            # Calculate ascendant and houses
+            houses_and_ascendant = calculate_houses_and_ascendant(jd_ut, chart.latitude, chart.longitude)
             
-            # Obliquity of ecliptic
-            obliquity_radians = math.radians(23.4392911)
+            # Extract sidereal ascendant
+            sidereal_asc = houses_and_ascendant.get('ascendant_longitude', 0.0)
             
-            # Observer's latitude 
-            latitude_radians = math.radians(chart.latitude)
-            
-            # Calculate ascendant directly
-            tan_term = math.tan(latitude_radians) * math.cos(obliquity_radians)
-            sin_lst = math.sin(lst_radians)
-            cos_lst = math.cos(lst_radians)
-            denominator = sin_lst * math.cos(obliquity_radians) + tan_term * math.sin(obliquity_radians)
-            ascendant_radians = math.atan2(-cos_lst, denominator)
-            tropical_asc = math.degrees(ascendant_radians) % 360
-            
-            logging.debug(f"Manual tropical ascendant calculation: {tropical_asc}")
-            sidereal_asc = (tropical_asc - ayanamsa) % 360
-            logging.debug(f"Sidereal ascendant: {sidereal_asc}")
+            # Format the position
             ascendant_position = format_position(sidereal_asc)
-            logging.debug(f"Ascendant: {ascendant_position['formatted']} (Manual calculation)")
+            logging.debug(f"Ascendant: {ascendant_position['formatted']} (Swiss Ephemeris calculation)")
+            
+            # Log details for debugging
+            tropical_asc = houses_and_ascendant.get('tropical_ascendant', 0.0)
+            actual_ayanamsa = houses_and_ascendant.get('ayanamsa', 0.0)
+            logging.debug(f"Tropical ascendant: {tropical_asc}")
+            logging.debug(f"Ayanamsa used: {actual_ayanamsa}")
+            
         except Exception as asc_error:
             logging.error(f"DETAILED Ascendant calculation error in view_chart: {str(asc_error)}")
             logging.error(f"Error type: {type(asc_error).__name__}")
