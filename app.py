@@ -127,22 +127,38 @@ def get_nakshatra_from_longitude(longitude):
 
 def get_zodiac_sign_from_longitude(longitude):
     """Get zodiac sign from longitude in degrees (0-360)"""
-    sign_index = int(longitude / 30)
+    # Normalize longitude to ensure it's in 0-360 range
+    normalized_longitude = longitude % 360
+    sign_index = int(normalized_longitude / 30)
     return ZODIAC_SIGNS[sign_index % 12]
 
 def format_position(longitude, retrograde=False):
     """Format position with zodiac sign and degree"""
-    sign = get_zodiac_sign_from_longitude(longitude)
-    degree = longitude % 30
-    nakshatra = get_nakshatra_from_longitude(longitude)
+    # Make sure longitude is normalized to 0-360 range
+    normalized_longitude = longitude % 360
+    sign = get_zodiac_sign_from_longitude(normalized_longitude)
+    degree = normalized_longitude % 30
+    nakshatra = get_nakshatra_from_longitude(normalized_longitude)
     r_symbol = " (R)" if retrograde else ""
+    
+    # Format degrees in DMS format
+    degree_int = int(degree)
+    minutes_float = (degree - degree_int) * 60
+    minutes_int = int(minutes_float)
+    seconds_int = int((minutes_float - minutes_int) * 60)
+    
+    formatted_dms = f"{sign} {degree_int}°{minutes_int}'{seconds_int}\""
+    if retrograde:
+        formatted_dms += " (R)"
+    
+    # Create full output
     return {
-        "longitude": longitude,
+        "longitude": normalized_longitude,
         "sign": sign,
         "degree": degree,
-        "formatted": f"{degree:.2f}° {sign}{r_symbol}",
+        "formatted": formatted_dms,
         "nakshatra": nakshatra,
-        "full_description": f"{degree:.2f}° {sign} – {nakshatra['name']} ({nakshatra['ruling_planet']}){r_symbol}"
+        "full_description": f"{sign} {degree_int}°{minutes_int}'{seconds_int}\" – {nakshatra['name']} ({nakshatra['ruling_planet']}){r_symbol}"
     }
 
 def get_timezone_from_coordinates(latitude, longitude):
