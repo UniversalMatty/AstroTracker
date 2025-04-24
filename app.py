@@ -410,8 +410,10 @@ def calculate_skyfield():
         ascendant_position = format_position(sidereal_asc)
         logging.debug(f"Ascendant: {ascendant_position['formatted']}")
         
-        # Calculate houses using Whole Sign system
-        houses = calculate_whole_sign_houses(ascendant_position)
+        # Get house system preference (default to whole_sign if not specified)
+        house_system = data.get('house_system', 'whole_sign')
+        # Calculate houses based on selected system
+        houses = calculate_houses(ascendant_position, house_system)
         
         # Create response data
         response_data = {
