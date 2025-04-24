@@ -50,7 +50,8 @@ def calculate_kerykeion_chart(birth_date, birth_time, city, country, latitude=No
             city=city,
             nation=country,
             lat=latitude,
-            lon=longitude
+            lng=longitude,
+            zodiac_type='Sidereal'  # Use sidereal zodiac for Vedic astrology
         )
         
         # Extract the ascendant (first house)
