@@ -167,8 +167,13 @@ def calculate_ascendant(t, observer):
     Returns:
         Tropical longitude of the ascendant in degrees
     """
-    # Use a simpler, more reliable method for ascendant calculation
-    # This uses standard astronomical formulas for sidereal time and ascendant
+    # Much simpler approach that doesn't require accessing observer's internal structure
+    # We use the constructor parameters directly since we know them
+    
+    # Extract latitude and longitude from the observer's creation parameters
+    # These should be available when we created the observer with earth + Topos()
+    latitude_degrees = observer.target.theta.degrees
+    longitude_degrees = observer.target.longitude.degrees
     
     from skyfield.constants import tau
     
@@ -177,11 +182,6 @@ def calculate_ascendant(t, observer):
     greenwich_sidereal_hours = t.gmst
     # Convert to radians
     greenwich_sidereal_radians = greenwich_sidereal_hours * tau / 24.0
-    
-    # Extract the latitude and longitude values directly from the location parameter of the Topos
-    # This avoids the 'VectorSum' object has no attribute 'longitude' error
-    latitude_degrees = observer.location[0].latitude.degrees
-    longitude_degrees = observer.location[0].longitude.degrees
     
     # Add the observer's longitude to get Local Sidereal Time (LST)
     longitude_radians = math.radians(longitude_degrees)
@@ -497,12 +497,61 @@ def calculate():
         # Calculate ascendant using Skyfield
         try:
             logging.debug("About to calculate ascendant...")
-            tropical_asc = calculate_ascendant(t, observer)
-            logging.debug(f"Tropical ascendant: {tropical_asc}")
+            # Debug observer object structure
+            logging.debug(f"Observer object type: {type(observer)}")
+            for key in dir(observer):
+                if not key.startswith('_'):
+                    try:
+                        value = getattr(observer, key)
+                        logging.debug(f"Observer.{key}: {type(value)}")
+                    except:
+                        logging.debug(f"Observer.{key}: <cannot access>")
+            
+            # Debug observer.target object
+            if hasattr(observer, 'target'):
+                logging.debug(f"Observer has target attribute of type: {type(observer.target)}")
+                for key in dir(observer.target):
+                    if not key.startswith('_'):
+                        try:
+                            value = getattr(observer.target, key)
+                            logging.debug(f"Observer.target.{key}: {type(value)}")
+                        except:
+                            logging.debug(f"Observer.target.{key}: <cannot access>")
+            
+            # The original latitude/longitude values used to create the observer
+            logging.debug(f"Original latitude: {latitude}, longitude: {longitude}")
+            
+            # Try direct manual calculation with known values
+            from skyfield.constants import tau
+            
+            # Get Local Sidereal Time 
+            greenwich_sidereal_hours = t.gmst
+            greenwich_sidereal_radians = greenwich_sidereal_hours * tau / 24.0
+            
+            # Add longitude to get LST
+            longitude_radians = math.radians(longitude)
+            lst_radians = greenwich_sidereal_radians + longitude_radians
+            lst_radians = lst_radians % tau
+            
+            # Obliquity of ecliptic
+            obliquity_radians = math.radians(23.4392911)
+            
+            # Observer's latitude 
+            latitude_radians = math.radians(latitude)
+            
+            # Calculate ascendant directly
+            tan_term = math.tan(latitude_radians) * math.cos(obliquity_radians)
+            sin_lst = math.sin(lst_radians)
+            cos_lst = math.cos(lst_radians)
+            denominator = sin_lst * math.cos(obliquity_radians) + tan_term * math.sin(obliquity_radians)
+            ascendant_radians = math.atan2(-cos_lst, denominator)
+            tropical_asc = math.degrees(ascendant_radians) % 360
+            
+            logging.debug(f"Manual tropical ascendant calculation: {tropical_asc}")
             sidereal_asc = (tropical_asc - ayanamsa) % 360
             logging.debug(f"Sidereal ascendant: {sidereal_asc}")
             ascendant_position = format_position(sidereal_asc)
-            logging.debug(f"Ascendant: {ascendant_position['formatted']} (Skyfield calculation)")
+            logging.debug(f"Ascendant: {ascendant_position['formatted']} (Manual calculation)")
         except Exception as asc_error:
             logging.error(f"DETAILED Ascendant calculation error: {str(asc_error)}")
             logging.error(f"Error type: {type(asc_error).__name__}")
@@ -697,15 +746,41 @@ def view_chart(chart_id):
         # Calculate ayanamsa
         ayanamsa = calculate_lahiri_ayanamsa(utc_datetime)
         
-        # Calculate ascendant using our internal function, with specific debug for chart viewing
+        # Calculate ascendant using manual calculation in view_chart
         try:
             logging.debug("About to calculate ascendant in view_chart...")
-            tropical_asc = calculate_ascendant(t, observer)
-            logging.debug(f"Tropical ascendant: {tropical_asc}")
+            
+            # Try direct manual calculation with known values
+            from skyfield.constants import tau
+            
+            # Get Local Sidereal Time 
+            greenwich_sidereal_hours = t.gmst
+            greenwich_sidereal_radians = greenwich_sidereal_hours * tau / 24.0
+            
+            # Add longitude to get LST
+            longitude_radians = math.radians(chart.longitude)
+            lst_radians = greenwich_sidereal_radians + longitude_radians
+            lst_radians = lst_radians % tau
+            
+            # Obliquity of ecliptic
+            obliquity_radians = math.radians(23.4392911)
+            
+            # Observer's latitude 
+            latitude_radians = math.radians(chart.latitude)
+            
+            # Calculate ascendant directly
+            tan_term = math.tan(latitude_radians) * math.cos(obliquity_radians)
+            sin_lst = math.sin(lst_radians)
+            cos_lst = math.cos(lst_radians)
+            denominator = sin_lst * math.cos(obliquity_radians) + tan_term * math.sin(obliquity_radians)
+            ascendant_radians = math.atan2(-cos_lst, denominator)
+            tropical_asc = math.degrees(ascendant_radians) % 360
+            
+            logging.debug(f"Manual tropical ascendant calculation: {tropical_asc}")
             sidereal_asc = (tropical_asc - ayanamsa) % 360
             logging.debug(f"Sidereal ascendant: {sidereal_asc}")
             ascendant_position = format_position(sidereal_asc)
-            logging.debug(f"Ascendant: {ascendant_position['formatted']} (Skyfield calculation)")
+            logging.debug(f"Ascendant: {ascendant_position['formatted']} (Manual calculation)")
         except Exception as asc_error:
             logging.error(f"DETAILED Ascendant calculation error in view_chart: {str(asc_error)}")
             logging.error(f"Error type: {type(asc_error).__name__}")
