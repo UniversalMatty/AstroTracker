@@ -717,7 +717,7 @@ def calculate():
             # Import Kerykeion calculation function
             from utils.kerykeion_utils import calculate_kerykeion_chart
             
-            # Calculate chart using Kerykeion
+            # Calculate chart using Kerykeion - BUT ONLY FOR THE ASCENDANT
             kerykeion_chart = calculate_kerykeion_chart(
                 birth_date=dob_date,
                 birth_time=dob_time,
@@ -727,24 +727,19 @@ def calculate():
                 longitude=longitude
             )
             
-            # Extract the ascendant
+            # Extract ONLY the ascendant from Kerykeion
             ascendant_position = kerykeion_chart['ascendant']
             
             # Log the calculation
             logging.debug(f"Ascendant: {ascendant_position['formatted']} (Kerykeion calculation)")
             
-            # Extract houses from Kerykeion
-            houses = kerykeion_chart['houses']
-            
-            # Get house meanings
-            house_meanings = get_house_meanings()
-            
             # Add ascendant interpretation
             ascendant_position['description'] = get_ascendant_interpretation(ascendant_position['sign'])
             
-            # REMOVE the creation of house_data structure - we'll do it AFTER our direct calculation
+            # EXPLICITLY IGNORE THE HOUSES FROM KERYKEION!
+            # DO NOT CREATE houses = kerykeion_chart['houses']
             
-            logging.warning(f"⚠️ COMPLETELY NEW APPROACH - Calculating houses directly inside app.py")
+            logging.warning(f"⚠️ COMPLETELY NEW APPROACH - Only using Kerykeion for ascendant, calculating houses directly in app.py")
             
             # We will NOT use any external function for house calculation at all
             # Instead, we'll directly create the houses array right here
@@ -1082,13 +1077,16 @@ def view_chart(chart_id):
                 longitude=chart.longitude
             )
             
-            # Extract the ascendant from Kerykeion
+            # Extract ONLY the ascendant from Kerykeion
             ascendant_position = kerykeion_chart['ascendant']
             
             # Log calculation details
             logging.debug(f"Ascendant: {ascendant_position['formatted']} (Kerykeion calculation in view_chart)")
             
-            logging.warning(f"🔶 VIEW CHART - Calculating houses directly inside view_chart")
+            # EXPLICITLY IGNORE THE HOUSES FROM KERYKEION!
+            # DO NOT CREATE houses = kerykeion_chart['houses']
+            
+            logging.warning(f"🔶 VIEW CHART - Only using Kerykeion for ascendant, calculating houses directly in view_chart")
             
             # We will NOT use any external function for house calculation at all
             # Instead, we'll directly create the houses array right here
