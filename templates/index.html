@@ -18,7 +18,7 @@
     <div class="container">
         <header class="text-center my-4">
             <h1><i class="fas fa-om me-2"></i> Your Energetic Blueprint</h1>
-            <p class="lead">Map of Your Energetic System</p>
+            <p class="lead">This is Your Unique Potential</p>
         </header>
         
         <!-- Alert messages -->
@@ -60,6 +60,18 @@
                                         <label for="dob_time" class="form-label">Time of Birth (if known)</label>
                                         <input type="time" class="form-control" id="dob_time" name="dob_time">
                                         <small class="form-text text-muted">For accurate house calculations</small>
+                                    </div>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label for="house_system" class="form-label">House System</label>
+                                    <select class="form-select" id="house_system" name="house_system">
+                                        <option value="whole_sign" selected>Whole Sign Houses</option>
+                                        <option value="equal">Equal Houses</option>
+                                    </select>
+                                    <div class="form-text">
+                                        <strong>Whole Sign:</strong> Each sign equals one house, with the Ascendant sign as the 1st house.<br>
+                                        <strong>Equal Houses:</strong> Houses are 30° each, with the Ascendant as the 1st house cusp.
                                     </div>
                                 </div>
                             </div>
