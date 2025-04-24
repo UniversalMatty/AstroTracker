@@ -29,11 +29,11 @@ app.secret_key = os.environ.get("SESSION_SECRET", "default_secret_key")
 
 # Load the ephemeris file
 try:
-    logger.info("Loading ephemeris file de440s.bsp...")
+    logging.info("Loading ephemeris file de440s.bsp...")
     eph = load('de440s.bsp')
-    logger.info("Ephemeris loaded successfully")
+    logging.info("Ephemeris loaded successfully")
 except Exception as e:
-    logger.error(f"Error loading ephemeris: {str(e)}")
+    logging.error(f"Error loading ephemeris: {str(e)}")
     raise
 
 # Define Earth for calculations
@@ -144,11 +144,11 @@ def get_timezone_from_coordinates(latitude, longitude):
         tf = TimezoneFinder()
         timezone_str = tf.timezone_at(lat=latitude, lng=longitude)
         if timezone_str is None:
-            logger.warning(f"Could not find timezone for coordinates: {latitude}, {longitude}. Using UTC.")
+            logging.warning(f"Could not find timezone for coordinates: {latitude}, {longitude}. Using UTC.")
             return "UTC"
         return timezone_str
     except Exception as e:
-        logger.error(f"Error finding timezone: {str(e)}")
+        logging.error(f"Error finding timezone: {str(e)}")
         return "UTC"
 
 def calculate_ascendant(t, observer):
@@ -241,10 +241,10 @@ def calculate_skyfield():
         data = request.json
         
         if not data:
-            logger.error("No JSON data received")
+            logging.error("No JSON data received")
             return jsonify({"error": "No data provided"}), 400
             
-        logger.debug(f"Received data: {data}")
+        logging.debug(f"Received data: {data}")
         
         # Extract data
         birth_date = data.get('birth_date')
@@ -262,11 +262,11 @@ def calculate_skyfield():
             return jsonify({"error": f"Could not determine coordinates for location: {city}, {country}"}), 400
             
         longitude, latitude = coordinates
-        logger.debug(f"Coordinates: {longitude}, {latitude}")
+        logging.debug(f"Coordinates: {longitude}, {latitude}")
         
         # Get timezone
         timezone_str = get_timezone_from_coordinates(latitude, longitude)
-        logger.debug(f"Timezone: {timezone_str}")
+        logging.debug(f"Timezone: {timezone_str}")
         
         # Convert local time to UTC
         try:
@@ -279,14 +279,14 @@ def calculate_skyfield():
             
             # Convert to UTC
             utc_datetime = local_datetime.astimezone(pytz.UTC)
-            logger.debug(f"UTC datetime: {utc_datetime}")
+            logging.debug(f"UTC datetime: {utc_datetime}")
         except Exception as e:
-            logger.error(f"Error converting time: {str(e)}")
+            logging.error(f"Error converting time: {str(e)}")
             return jsonify({"error": f"Invalid date or time format: {str(e)}"}), 400
         
         # Calculate ayanamsa
         ayanamsa = calculate_lahiri_ayanamsa(utc_datetime)
-        logger.debug(f"Ayanamsa: {ayanamsa}")
+        logging.debug(f"Ayanamsa: {ayanamsa}")
         
         # Create Skyfield time object
         t = ts.from_datetime(utc_datetime)
@@ -298,7 +298,7 @@ def calculate_skyfield():
         tropical_asc = calculate_ascendant(t, observer)
         sidereal_asc = (tropical_asc - ayanamsa) % 360
         ascendant_position = format_position(sidereal_asc)
-        logger.debug(f"Ascendant: {ascendant_position['formatted']}")
+        logging.debug(f"Ascendant: {ascendant_position['formatted']}")
         
         # Calculate houses using Whole Sign system
         houses = calculate_whole_sign_houses(ascendant_position)
@@ -322,7 +322,7 @@ def calculate_skyfield():
         return jsonify(response_data)
         
     except Exception as e:
-        logger.error(f"Error calculating chart data: {str(e)}")
+        logging.error(f"Error calculating chart data: {str(e)}")
         return jsonify({"error": f"Error calculating chart data: {str(e)}"}), 500
 
 @app.route('/calculate', methods=['GET', 'POST'])
