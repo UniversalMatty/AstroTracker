@@ -8,8 +8,8 @@ import logging
 from datetime import datetime, timezone
 
 # Set up Swiss Ephemeris
-# Path to ephemeris files - use the root directory where SE1 files are stored
-EPHE_PATH = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+# Path to ephemeris files - point directly to the ephe directory where SE1 files are stored
+EPHE_PATH = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "ephe")
 swe.set_ephe_path(EPHE_PATH)
 
 # Initialize SwissEph with the correct files
@@ -187,7 +187,7 @@ def calculate_house_cusps(jd_ut, latitude, longitude, house_system="Equal Houses
         
         # Set path to ephemeris files if not already done
         try:
-            swe.set_ephe_path("ephe")
+            swe.set_ephe_path(EPHE_PATH)
         except:
             logging.warning("Could not set ephemeris path, continuing with defaults")
         
