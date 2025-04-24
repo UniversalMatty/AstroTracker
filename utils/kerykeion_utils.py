@@ -4,7 +4,7 @@ Uses Kerykeion for accurate ascendant and house calculations.
 """
 import logging
 from datetime import datetime
-from kerykeion import AstrologicalSubject
+from kerykeion import KerykeionSubject
 from kerykeion.utilities.math import degrees_to_dms
 
 def calculate_kerykeion_chart(birth_date, birth_time, city, country, latitude=None, longitude=None):
@@ -32,7 +32,7 @@ def calculate_kerykeion_chart(birth_date, birth_time, city, country, latitude=No
             hour, minute = map(int, birth_time.split(':'))
         
         # Create the astrological subject
-        subject = AstrologicalSubject(
+        subject = KerykeionSubject(
             name="Subject",
             year=year, 
             month=month, 
