@@ -211,12 +211,23 @@ def calculate_house_cusps(jd_ut, latitude, longitude, house_system="Equal Houses
             sidereal_asc_sign = get_zodiac_sign(sidereal_asc)
             sidereal_asc_degree = sidereal_asc % 30
             
+            # Get ruler for the sign
+            ruler = get_sign_ruler(sidereal_asc_sign)
+            
+            # Add detailed logging for debugging
+            logging.debug(f"Ascendant calculation details:")
+            logging.debug(f"  - Tropical ascendant: {tropical_asc:.2f}°")
+            logging.debug(f"  - Ayanamsa: {ayanamsa:.2f}°")
+            logging.debug(f"  - Sidereal ascendant: {sidereal_asc:.2f}°")
+            logging.debug(f"  - Zodiac sign: {sidereal_asc_sign}")
+            logging.debug(f"  - Degree in sign: {sidereal_asc_degree:.2f}°")
+            
             # Format ascendant
             ascendant = {
                 'longitude': sidereal_asc,
                 'sign': sidereal_asc_sign,
                 'degree': sidereal_asc_degree,
-                'formatted': f"{sidereal_asc_sign} {sidereal_asc_degree:.2f}°"
+                'formatted': f"{sidereal_asc_sign} {sidereal_asc_degree:.2f}° ({ruler})"
             }
             
             logging.debug(f"Ascendant: {ascendant['formatted']}")
