@@ -762,8 +762,10 @@ def calculate():
             
             # Log house data to debug
             logging.debug(f"HOUSE SYSTEM SELECTED: {house_system}")
-            logging.debug(f"Ascendant: {ascendant_position['sign']} at {ascendant_position['degree']}°")
+            logging.debug(f"Ascendant SIGN PASSED TO HOUSE CALCULATION: '{ascendant_position['sign']}'")
+            logging.debug(f"Ascendant FULL DETAILS: {ascendant_position}")
             logging.debug(f"House 1 sign: {houses[0]['sign']}")
+            logging.debug(f"ALL HOUSES: {houses}")
             
             # Add meanings to houses
             for house in houses:
