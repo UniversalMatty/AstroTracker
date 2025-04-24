@@ -226,41 +226,10 @@ def view_chart(chart_id):
                 'position': '50.0%'  # Default position within nakshatra
             }
         
+        # Add planet description
+        planet['description'] = get_planet_description(position.planet_name)
+        
         planets.append(planet)
-    
-    # Calculate houses dynamically based on birth time and location
-    houses = calculate_houses(
-        chart.birth_date.strftime('%Y-%m-%d'),
-        chart.birth_time.strftime('%H:%M') if chart.birth_time else None,
-        chart.longitude,
-        chart.latitude
-    )
-    
-    # Get the ascendant from the first house (with exact degree)
-    ascendant_sign = houses[0]['sign']
-    ascendant_longitude = houses[0]['ascendant_longitude']  # Use actual ascendant longitude
-    ascendant_degree = ascendant_longitude % 30  # Get the degree within the sign
-    
-    # Create an ascendant "planet" entry and insert it after the Sun in the planets list
-    sun_index = next((i for i, p in enumerate(planets) if p['name'] == 'Sun'), -1)
-    
-    ascendant_entry = {
-        'name': 'Ascendant',
-        'longitude': ascendant_longitude,
-        'formatted_position': f"{ascendant_sign} {ascendant_degree:.2f}°",
-        'sign': ascendant_sign,
-        'retrograde': False,
-        'nakshatra': get_nakshatra(ascendant_longitude)
-    }
-    
-    # Insert ascendant after Sun
-    if sun_index != -1:
-        planets.insert(sun_index + 1, ascendant_entry)
-    else:
-        # Fallback: add at the beginning if Sun not found
-        planets.insert(0, ascendant_entry)
-    
-    house_meanings = get_house_meanings()
     
     # Format birth details for template
     birth_details = {
@@ -275,8 +244,6 @@ def view_chart(chart_id):
         'result.html',
         birth_details=birth_details,
         planets=planets,
-        houses=houses,
-        house_meanings=house_meanings,
         chart_id=chart_id,
         notes=chart.notes
     )

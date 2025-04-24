@@ -18,7 +18,7 @@
     <div class="container">
         <header class="text-center my-4">
             <h1><i class="fas fa-moon me-2"></i> Astrological Results</h1>
-            <p class="lead">Sidereal calculations using the whole sign system</p>
+            <p class="lead">Vedic Sidereal Calculations with Lahiri Ayanamsa</p>
         </header>
         
         <!-- Birth Information -->
@@ -38,7 +38,7 @@
                 <div class="col-md-6">
                     <p><strong>Location:</strong> {{ birth_details.location }}</p>
                     <p><strong>Coordinates:</strong> {{ birth_details.coordinates[1] }}° N, {{ birth_details.coordinates[0] }}° E</p>
-                    <p><strong>System:</strong> Sidereal Zodiac, Whole Sign Houses</p>
+                    <p><strong>System:</strong> Vedic Sidereal Zodiac (Lahiri Ayanamsa)</p>
 
                 </div>
             </div>
@@ -84,56 +84,40 @@
             </div>
         </div>
         
-        <!-- Houses Section -->
+        <!-- Planet Descriptions Section -->
         <div class="card mb-4">
             <div class="card-header bg-secondary text-white">
-                <h3 class="mb-0">Houses (Whole Sign System)</h3>
+                <h3 class="mb-0">Planet Descriptions</h3>
             </div>
             <div class="card-body">
                 <p class="mb-4">
-                    In the whole sign house system, each house occupies exactly one sign. The sign that contains the ascendant becomes the 1st house, and subsequent signs become the subsequent houses. While each house corresponds to one full sign, the ascendant (lagna) itself can be at any degree within its sign.
+                    Below are descriptions of each planet's astrological significance. Each celestial body has its own unique influence and meaning in Vedic astrology.
                 </p>
                 
-                <div class="row row-cols-1 row-cols-md-3 g-4 house-grid">
-                    {% for house in houses %}
+                <div class="row row-cols-1 row-cols-md-2 g-4">
+                    {% for planet in planets %}
                     <div class="col">
-                        <div class="card house-card h-100">
+                        <div class="card planet-card h-100">
                             <div class="card-header bg-dark">
-                                {% if house.house_number == 1 %}
-                                House {{ house.house_number }} - {{ house.sign }} (Ascendant at {{ house.ascendant_degree|round(2) }}°)
-                                {% else %}
-                                House {{ house.house_number }} - {{ house.sign }}
-                                {% endif %}
+                                <span class="{% if planet.retrograde %}retrograde{% endif %}">{{ planet.name }}</span> in 
+                                <span class="sign-{{ planet.sign.lower() }}">{{ planet.sign }}</span>
                             </div>
                             <div class="card-body">
-                                <p class="card-text">
-                                    {{ house_meanings[house.house_number] }}
-                                </p>
-                                
-                                <!-- List planets in this house -->
-                                {% set has_planets = false %}
-                                
-                                <!-- Check if any planets are in this house -->
-                                {% for planet in planets %}
-                                    {% if planet.sign == house.sign %}
-                                        {% set has_planets = true %}
+                                <div class="mb-3">
+                                    <strong>Position:</strong> {{ planet.formatted_position }}
+                                    {% if planet.retrograde %}
+                                        <span class="badge bg-warning text-dark ms-2">Retrograde</span>
                                     {% endif %}
-                                {% endfor %}
-                                
-                                {% if has_planets %}
-                                <div class="mt-3">
-                                    <strong>Planets:</strong>
-                                    <div class="mt-2">
-                                        {% for planet in planets %}
-                                            {% if planet.sign == house.sign %}
-                                            <span class="planet-badge bg-dark {% if planet.retrograde %}retrograde{% endif %}">
-                                                {{ planet.name }}
-                                            </span>
-                                            {% endif %}
-                                        {% endfor %}
-                                    </div>
                                 </div>
-                                {% endif %}
+                                
+                                <div class="mb-3">
+                                    <strong>Nakshatra:</strong> {{ planet.nakshatra.name }} ({{ planet.nakshatra.position }})
+                                    <div><small>Ruling planet: {{ planet.nakshatra.ruling_planet }}</small></div>
+                                </div>
+                                
+                                <p class="card-text">
+                                    {{ planet.description }}
+                                </p>
                             </div>
                         </div>
                     </div>
@@ -190,8 +174,8 @@
         <footer class="text-center my-4">
             <p class="text-muted">
                 <small>
-                    Astrological Calculator &copy; 2023 | 
-                    Using sidereal calculations and whole sign system
+                    Vedic Astrological Calculator &copy; 2023 | 
+                    Using sidereal calculations with Lahiri ayanamsa
                 </small>
             </p>
         </footer>

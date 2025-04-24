@@ -14,31 +14,32 @@ def get_planet_description(planet_name):
         A string describing the planet's astrological significance
     """
     descriptions = {
-        "Sun": "Represents the soul, ego, self-expression, vitality, authority, and father figures. The Sun governs leadership abilities, personal power, and creativity.",
+        "Sun": "The Sun represents our core identity, ego, and personal power. In Vedic astrology, it governs authority, vitality, leadership, and self-expression. The Sun's position indicates areas of life where you naturally shine and express your individuality.",
         
-        "Moon": "Governs emotions, mind, maternal instincts, nurturing, and the subconscious. The Moon reflects how we process feelings, respond to others, and our emotional needs.",
+        "Moon": "The Moon represents our emotions, subconscious mind, and inner feelings. In Vedic astrology, it governs intuition, nurturing abilities, and how we respond emotionally to experiences. The Moon's position indicates the nature of your emotional landscape and needs for comfort and security.",
         
-        "Mercury": "Rules intellect, communication, logical thinking, learning, and adaptability. Mercury influences how we express ourselves, process information, and interact with others.",
+        "Mercury": "Mercury represents intellect, communication, and analytical thinking. In Vedic astrology, it governs learning, speech, writing, and quick-wittedness. Mercury's position indicates how you process information, express yourself verbally, and approach problem-solving.",
         
-        "Venus": "Governs love, relationships, beauty, aesthetics, pleasure, and values. Venus represents our capacity for affection, artistic appreciation, and harmony in relationships.",
+        "Venus": "Venus represents love, beauty, aesthetics, and relationships. In Vedic astrology, it governs pleasure, artistic talents, and sensuality. Venus's position indicates your approach to love, what you find beautiful, and how you express affection and create harmony.",
         
-        "Mars": "Represents energy, action, courage, passion, aggression, and drive. Mars influences our assertiveness, physical vitality, and how we pursue our desires.",
+        "Mars": "Mars represents energy, action, courage, and desire. In Vedic astrology, it governs ambition, physical strength, and competitive drive. Mars's position indicates how you assert yourself, pursue goals, and channel your passions and aggression.",
         
-        "Jupiter": "The planet of expansion, wisdom, higher learning, abundance, and growth. Jupiter brings optimism, generosity, and opportunities for spiritual and material prosperity.",
+        "Jupiter": "Jupiter represents expansion, wisdom, and abundance. In Vedic astrology, it governs higher learning, philosophy, spirituality, and good fortune. Jupiter's position indicates areas of life where you may experience growth, optimism, and opportunities for advancement.",
         
-        "Saturn": "Rules discipline, responsibility, restrictions, karma, and life lessons. Saturn teaches through challenges, representing structure, endurance, and maturity.",
+        "Saturn": "Saturn represents discipline, responsibility, and life lessons. In Vedic astrology, it governs structure, limitations, hard work, and the wisdom gained through experience. Saturn's position indicates areas of life where you may face challenges that lead to maturity and mastery.",
         
-        "Uranus": "Governs revolution, innovation, sudden changes, and originality. Uranus breaks established patterns, bringing unexpected developments and technological advancements.",
+        "Rahu": "Rahu (North Node) represents desire, ambition, and unfamiliar experiences. In Vedic astrology, it governs worldly obsessions, innovation, and breaking social norms. Rahu's position indicates areas of life where you seek growth through new, sometimes unconventional experiences.",
         
-        "Neptune": "Represents spirituality, dreams, intuition, and dissolution of boundaries. Neptune influences imagination, compassion, and connection to higher realms.",
+        "Ketu": "Ketu (South Node) represents spiritual insight, detachment, and liberation. In Vedic astrology, it governs intuitive knowledge, past-life abilities, and release from materialistic desires. Ketu's position indicates areas of life where you may experience a sense of detachment or possess inherent spiritual wisdom.",
         
-        "Pluto": "Rules transformation, regeneration, power dynamics, and hidden truths. Pluto brings profound changes through destruction and rebirth processes.",
+        "Uranus": "Uranus represents innovation, rebellion, and sudden change. In Vedic astrology (where it's a non-traditional planet), it governs originality, technological advances, and liberation from restrictions. Uranus's position indicates areas where you seek freedom and may experience unexpected breakthroughs.",
         
-        "Rahu": "The North Node of the Moon, representing desire, ambition, and worldly attachment. Rahu pushes us toward new experiences and materialistic growth, often causing obsession and illusion.",
+        "Neptune": "Neptune represents spirituality, intuition, and transcendence. In Vedic astrology (where it's a non-traditional planet), it governs mysticism, dreams, and dissolving boundaries. Neptune's position indicates areas where you may experience inspiration, compassion, or sometimes confusion and illusion.",
         
-        "Ketu": "The South Node of the Moon, representing past karma, spiritual insight, and detachment. Ketu brings spiritual wisdom, liberation from material desires, and connects to past life experiences.",
+        "Pluto": "Pluto represents transformation, power, and regeneration. In Vedic astrology (where it's a non-traditional planet), it governs deep psychological change, hidden resources, and rebirth. Pluto's position indicates areas of life where you may experience profound transformation and empowerment.",
         
-        "Ascendant": "Also known as Lagna, represents the self, physical body, appearance, and first impressions. The Ascendant is the zodiac sign rising on the eastern horizon at birth."
+        "Ascendant": "The Ascendant (or Lagna) represents your physical self and the way you present yourself to the world. It influences appearance, personality, and the first impression you make on others. The Ascendant is considered one of the most important points in a Vedic birth chart."
     }
     
-    return descriptions.get(planet_name, "No description available.")
+    # Return the description if available, otherwise a generic message
+    return descriptions.get(planet_name, f"Description for {planet_name} is not available.")
