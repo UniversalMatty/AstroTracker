@@ -2,7 +2,7 @@ import os
 import logging
 import math
 import traceback
-from datetime import datetime
+from datetime import datetime, date
 from flask import Flask, render_template, request, redirect, url_for, flash, session, jsonify, Response
 from werkzeug.utils import secure_filename
 import tempfile
@@ -642,6 +642,12 @@ def calculate():
             'coordinates': coordinates
         }
         
+        # Save data to session for export functionality
+        session['birth_details'] = birth_details
+        session['planets'] = planets
+        session['ascendant'] = house_data['ascendant']
+        session['houses'] = house_data['houses']
+        
         # Pass data to result template
         return render_template(
             'result.html',
@@ -900,9 +906,16 @@ def export_chart_json():
             'calculation_method': 'Sidereal (Lahiri Ayanamsa)'
         }
         
+        # Function to handle datetime objects for JSON serialization
+        def json_serial(obj):
+            """JSON serializer for objects not serializable by default json code"""
+            if isinstance(obj, (datetime, date)):
+                return obj.isoformat()
+            raise TypeError(f"Type {type(obj)} not serializable")
+        
         # Create the JSON response
         response = Response(
-            json.dumps(chart_data, indent=2),
+            json.dumps(chart_data, indent=2, default=json_serial),
             mimetype='application/json',
             headers={
                 'Content-Disposition': f'attachment;filename=birth_chart_{session["birth_details"]["date"].replace("-", "")}.json'
