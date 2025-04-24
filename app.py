@@ -7,8 +7,9 @@ import tempfile
 import json
 
 from utils.geocoding import get_coordinates
-from utils.astronomy import calculate_planet_positions
-from utils.astrology import calculate_houses, get_nakshatra, get_house_meanings
+from utils.astronomy import calculate_planet_positions, get_zodiac_sign
+from utils.astrology import get_nakshatra
+from utils.planet_descriptions import get_planet_description
 from models import db, Chart, PlanetPosition
 
 logging.basicConfig(level=logging.DEBUG)
@@ -68,38 +69,47 @@ def calculate():
         longitude, latitude = coordinates
         planets = calculate_planet_positions(dob_date, dob_time, longitude, latitude)
         
-        # Calculate houses and get ascendant
-        houses = calculate_houses(dob_date, dob_time, longitude, latitude)
+        # Add Rahu and Ketu (North and South Lunar Nodes)
+        # Find Moon's position
+        moon_position = next((p['longitude'] for p in planets if p['name'] == 'Moon'), None)
         
-        # Get the ascendant from the first house (with exact degree)
-        ascendant_sign = houses[0]['sign']
-        ascendant_longitude = houses[0]['ascendant_longitude']  # Use actual ascendant longitude
-        ascendant_degree = ascendant_longitude % 30  # Get the degree within the sign
+        if moon_position is not None:
+            # Rahu (North Node) is approximately 180° opposite the Moon's position
+            rahu_longitude = (moon_position + 180) % 360
+            rahu_sign = get_zodiac_sign(rahu_longitude)
+            rahu_degree = rahu_longitude % 30
+            
+            # Ketu (South Node) is exactly opposite Rahu
+            ketu_longitude = (rahu_longitude + 180) % 360
+            ketu_sign = get_zodiac_sign(ketu_longitude)
+            ketu_degree = ketu_longitude % 30
+            
+            # Add Rahu to planets
+            rahu_entry = {
+                'name': 'Rahu',
+                'longitude': rahu_longitude,
+                'formatted_position': f"{rahu_sign} {rahu_degree:.2f}°",
+                'sign': rahu_sign,
+                'retrograde': False
+            }
+            
+            # Add Ketu to planets
+            ketu_entry = {
+                'name': 'Ketu',
+                'longitude': ketu_longitude,
+                'formatted_position': f"{ketu_sign} {ketu_degree:.2f}°",
+                'sign': ketu_sign,
+                'retrograde': False
+            }
+            
+            planets.append(rahu_entry)
+            planets.append(ketu_entry)
         
-        # Create an ascendant "planet" entry and insert it after the Sun in the planets list
-        sun_index = next((i for i, p in enumerate(planets) if p['name'] == 'Sun'), -1)
-        
-        ascendant_entry = {
-            'name': 'Ascendant',
-            'longitude': ascendant_longitude,
-            'formatted_position': f"{ascendant_sign} {ascendant_degree:.2f}°",
-            'sign': ascendant_sign,
-            'retrograde': False
-        }
-        
-        # Insert ascendant after Sun
-        if sun_index != -1:
-            planets.insert(sun_index + 1, ascendant_entry)
-        else:
-            # Fallback: add at the beginning if Sun not found
-            planets.insert(0, ascendant_entry)
-        
-        # Get nakshatra for each planet including ascendant
+        # Get nakshatra for each planet
         for planet in planets:
             planet['nakshatra'] = get_nakshatra(planet['longitude'])
-        
-        # Get house meanings
-        house_meanings = get_house_meanings()
+            # Add planet description
+            planet['description'] = get_planet_description(planet['name'])
         
         # Store calculation results in session
         birth_details = {
@@ -114,9 +124,7 @@ def calculate():
         return render_template(
             'result.html',
             birth_details=birth_details,
-            planets=planets,
-            houses=houses,
-            house_meanings=house_meanings
+            planets=planets
         )
         
     except Exception as e:
