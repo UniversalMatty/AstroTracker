@@ -97,26 +97,40 @@ def calculate_houses(jd_ut, latitude, longitude, house_system=b'W'):
     - latitude: Geographic latitude in decimal degrees
     - longitude: Geographic longitude in decimal degrees
     - house_system: House system to use. Default is 'W' for Whole Sign houses.
-                    Can also use 'E' for Equal Houses. No other house systems are supported.
+                    Can also use 'E' for Equal Houses, or 'P' for Placidus.
     
     Returns a tuple of (houses, ascmc) where:
     - houses: List of house cusps
     - ascmc: List of special points (ascendant, midheaven, etc.)
     """
     try:
-        # Validate house system (only Whole Sign and Equal House are supported)
-        if house_system not in [b'W', b'E']:
+        # Validate house system 
+        house_flag_map = {
+            "Placidus": b'P',
+            "Equal Houses": b'E',
+            "Whole Sign": b'W'
+        }
+        
+        # If house_system is a string key from the map, get the corresponding byte flag
+        if isinstance(house_system, str) and house_system in house_flag_map:
+            house_flag = house_flag_map[house_system]
+        else:
+            # If it's already a byte flag or an unrecognized value, use it directly
+            house_flag = house_system
+        
+        # Ensure we have a valid house system flag 
+        if house_flag not in [b'W', b'E', b'P']:
             logging.warning(f"Unsupported house system: {house_system}. Using Whole Sign (W) instead.")
-            house_system = b'W'
+            house_flag = b'W'
             
         # Calculate houses using houses_ex for more detailed data
         # Parameters:
         # jd_ut: Julian day in UT
         # lat: Latitude
         # lon: Longitude
-        # hsys: House system ('W' for Whole Sign, 'E' for Equal)
+        # hsys: House system flag (b'W', b'E', or b'P')
         # flags: 0 for default behavior
-        cusps, ascmc = swe.houses_ex(jd_ut, latitude, longitude, house_system, 0)
+        cusps, ascmc = swe.houses_ex(jd_ut, latitude, longitude, house_flag, 0)
         
         # The ascendant is the first element of ascmc
         asc_degree = ascmc[0]
@@ -140,14 +154,15 @@ def calculate_houses(jd_ut, latitude, longitude, house_system=b'W'):
         logging.error(f"Error calculating houses with Swiss Ephemeris: {str(e)}")
         raise
 
-def calculate_house_cusps(jd_ut, latitude, longitude):
+def calculate_house_cusps(jd_ut, latitude, longitude, house_system="Equal Houses"):
     """
-    Calculate sidereal house cusps using Swiss Ephemeris with Equal Houses.
+    Calculate sidereal house cusps using Swiss Ephemeris.
     
     Parameters:
     - jd_ut: Julian Day in Universal Time
     - latitude: Geographic latitude in decimal degrees
     - longitude: Geographic longitude in decimal degrees
+    - house_system: House system to use (string): "Equal Houses", "Whole Sign", or "Placidus"
     
     Returns a dictionary with:
     - ascendant: Sidereal ascendant information
@@ -155,13 +170,19 @@ def calculate_house_cusps(jd_ut, latitude, longitude):
     """
     try:
         # Debug info
-        logging.debug(f"Calculating house cusps with JD: {jd_ut}, Lat: {latitude}, Long: {longitude}")
+        logging.debug(f"Calculating house cusps with JD: {jd_ut}, Lat: {latitude}, Long: {longitude}, House system: {house_system}")
         
-        # We'll use a simpler approach for house cusp calculation to avoid dependencies on specific functions
-        # Since we're using Equal Houses, each house is exactly 30 degrees apart, starting with the Ascendant
+        # House system mapping
+        house_flag_map = {
+            "Placidus": b'P',
+            "Equal Houses": b'E',
+            "Whole Sign": b'W'
+        }
+        
+        # Get the correct house system flag
+        house_flag = house_flag_map.get(house_system, b'E')  # Default to Equal Houses if not specified
         
         # First calculate the ascendant (Lagna)
-        # For this we'll use a standard houses calculation
         import swisseph as swe
         
         # Set path to ephemeris files if not already done
@@ -177,8 +198,8 @@ def calculate_house_cusps(jd_ut, latitude, longitude):
             logging.warning("Could not set sidereal mode, continuing with tropical calculations")
         
         try:
-            # Using standard houses calculation
-            houses, ascmc = swe.houses(jd_ut, latitude, longitude, b'E')
+            # Using standard houses calculation with the specified house system
+            houses, ascmc = swe.houses_ex(jd_ut, latitude, longitude, house_flag, 0)
             tropical_asc = ascmc[0]  # Ascendant is first element
             
             # Get ayanamsa for this date
