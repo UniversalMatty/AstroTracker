@@ -1,6 +1,7 @@
 import os
 import logging
 import math
+import traceback
 from datetime import datetime
 from flask import Flask, render_template, request, redirect, url_for, flash, session, jsonify
 from werkzeug.utils import secure_filename
@@ -386,7 +387,14 @@ def calculate():
         
         # Calculate planetary positions (incl. Rahu and Ketu) using Swiss Ephemeris
         longitude, latitude = coordinates
-        planets = calculate_planet_positions(dob_date, dob_time, longitude, latitude)
+        try:
+            planets = calculate_planet_positions(dob_date, dob_time, longitude, latitude)
+        except Exception as planet_error:
+            logging.error(f"Detailed planet calculation error: {str(planet_error)}")
+            logging.error(f"Exception type: {type(planet_error).__name__}")
+            logging.error(f"Error traceback: {traceback.format_exc()}")
+            # Set a default empty list for planets if calculation fails
+            planets = []
         
         # Get nakshatra for each planet
         for planet in planets:
