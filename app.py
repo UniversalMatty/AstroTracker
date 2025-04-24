@@ -84,7 +84,7 @@ def calculate_lahiri_ayanamsa(date):
     and increases by about 50.3 seconds per year.
     
     Args:
-        date: Python datetime object
+        date: Python datetime object (can be timezone-aware or naive)
         
     Returns:
         The Lahiri ayanamsa value in degrees for the given date
@@ -96,7 +96,11 @@ def calculate_lahiri_ayanamsa(date):
     # Ayanamsa increases by about 50.3 seconds per year
     seconds_per_year = 50.3 / 3600  # Convert to degrees
     
-    # Calculate years difference
+    # Calculate years difference - handle timezone-aware datetime
+    if date.tzinfo is not None:
+        # If input is timezone-aware, convert reference date to UTC too
+        ref_date = pytz.UTC.localize(ref_date)
+    
     days_diff = (date - ref_date).days
     years_diff = days_diff / 365.25
     
@@ -361,75 +365,57 @@ def calculate():
             planet['description'] = get_planet_description(planet['name'])
         
         # Always calculate houses and ascendant using Skyfield for better accuracy
-        try:
-            # Get timezone
-            timezone_str = get_timezone_from_coordinates(latitude, longitude)
-            if not timezone_str:
-                timezone_str = "UTC"
-            logging.debug(f"Timezone: {timezone_str}")
-                
-            # Convert local time to UTC
-            local_datetime_str = f"{dob_date} {dob_time or '12:00'}"
-            local_datetime = datetime.strptime(local_datetime_str, '%Y-%m-%d %H:%M')
+        # Get timezone
+        timezone_str = get_timezone_from_coordinates(latitude, longitude)
+        if not timezone_str:
+            timezone_str = "UTC"
+        logging.debug(f"Timezone: {timezone_str}")
             
-            # Localize the datetime
-            local_tz = pytz.timezone(timezone_str)
-            local_datetime = local_tz.localize(local_datetime)
+        # Convert local time to UTC
+        local_datetime_str = f"{dob_date} {dob_time or '12:00'}"
+        local_datetime = datetime.strptime(local_datetime_str, '%Y-%m-%d %H:%M')
+        
+        # Localize the datetime
+        local_tz = pytz.timezone(timezone_str)
+        local_datetime = local_tz.localize(local_datetime)
+        
+        # Convert to UTC
+        utc_datetime = local_datetime.astimezone(pytz.UTC)
+        logging.debug(f"UTC datetime: {utc_datetime}")
+        
+        # Create Skyfield time object
+        t = ts.from_datetime(utc_datetime)
+        
+        # Create observer
+        observer = earth + Topos(latitude_degrees=latitude, longitude_degrees=longitude)
+        
+        # Calculate ayanamsa
+        ayanamsa = calculate_lahiri_ayanamsa(utc_datetime)
+        logging.debug(f"Ayanamsa: {ayanamsa}")
+        
+        # Calculate ascendant using Skyfield
+        tropical_asc = calculate_ascendant(t, observer)
+        sidereal_asc = (tropical_asc - ayanamsa) % 360
+        ascendant_position = format_position(sidereal_asc)
+        logging.debug(f"Ascendant: {ascendant_position['formatted']} (Skyfield calculation)")
+        
+        # Calculate houses using Whole Sign system with Skyfield
+        houses = calculate_whole_sign_houses(ascendant_position)
+        
+        # Get house meanings
+        house_meanings = get_house_meanings()
+        
+        # Add meanings to houses
+        for house in houses:
+            house['meaning'] = house_meanings.get(house['house'], '')
             
-            # Convert to UTC
-            utc_datetime = local_datetime.astimezone(pytz.UTC)
-            logging.debug(f"UTC datetime: {utc_datetime}")
-            
-            # Create Skyfield time object
-            t = ts.from_datetime(utc_datetime)
-            
-            # Create observer
-            observer = earth + Topos(latitude_degrees=latitude, longitude_degrees=longitude)
-            
-            # Calculate ayanamsa
-            ayanamsa = calculate_lahiri_ayanamsa(utc_datetime)
-            logging.debug(f"Ayanamsa: {ayanamsa}")
-            
-            # Calculate ascendant using Skyfield
-            tropical_asc = calculate_ascendant(t, observer)
-            sidereal_asc = (tropical_asc - ayanamsa) % 360
-            ascendant_position = format_position(sidereal_asc)
-            logging.debug(f"Ascendant: {ascendant_position['formatted']} (Skyfield calculation)")
-            
-            # Calculate houses using Whole Sign system with Skyfield
-            houses = calculate_whole_sign_houses(ascendant_position)
-            
-            # Get house meanings
-            house_meanings = get_house_meanings()
-            
-            # Add meanings to houses
-            for house in houses:
-                house['meaning'] = house_meanings.get(house['house'], '')
-                
-            # Create the house_data structure that the rest of the code expects
-            house_data = {
-                'ascendant': ascendant_position,
-                'houses': houses
-            }
-            
-            # Add information that this was calculated with Skyfield
-            house_data['calculation_method'] = "Skyfield (High Precision)"
-            
-            logging.info(f"Successfully calculated houses using Skyfield - Ascendant: {ascendant_position['formatted']}")
-                
-        except Exception as e:
-            # Fallback to the original method if Skyfield calculation fails
-            logging.error(f"Error calculating houses with Skyfield: {str(e)}. Falling back to original method.")
-            jd_ut = calculate_jd_ut(dob_date, dob_time)
-            house_data = calculate_house_cusps(jd_ut, latitude, longitude)
-            house_data['calculation_method'] = "Swiss Ephemeris (Fallback)"
-            
-            # Get house meanings
-            house_meanings = get_house_meanings()
-            
-            # Add meanings to houses
-            for house in house_data['houses']:
-                house['meaning'] = house_meanings.get(house['house'], '')
+        # Create the house_data structure that the rest of the code expects
+        house_data = {
+            'ascendant': ascendant_position,
+            'houses': houses
+        }
+        
+        logging.info(f"Successfully calculated houses using Skyfield - Ascendant: {ascendant_position['formatted']}")
         
         # Store calculation results in session
         birth_details = {
@@ -565,78 +551,60 @@ def view_chart(chart_id):
     
     # Calculate house cusps and ascendant (lagna) for viewing
     if chart.birth_time:
-        try:
-            # Use Skyfield for house and ascendant calculations
-            from skyfield_houses import calculate_ascendant, calculate_whole_sign_houses, format_position, calculate_lahiri_ayanamsa
-            from skyfield.api import load, Topos
-            import pytz
-            from timezonefinder import TimezoneFinder
+        # Use Skyfield for house and ascendant calculations
+        from skyfield_houses import calculate_ascendant, calculate_whole_sign_houses, format_position, calculate_lahiri_ayanamsa
+        from skyfield.api import load, Topos
+        import pytz
+        from timezonefinder import TimezoneFinder
+        
+        # Get timezone
+        tf = TimezoneFinder()
+        timezone_str = tf.timezone_at(lat=chart.latitude, lng=chart.longitude)
+        if not timezone_str:
+            timezone_str = "UTC"
             
-            # Get timezone
-            tf = TimezoneFinder()
-            timezone_str = tf.timezone_at(lat=chart.latitude, lng=chart.longitude)
-            if not timezone_str:
-                timezone_str = "UTC"
-                
-            # Convert local time to UTC
-            birth_date_str = chart.birth_date.strftime('%Y-%m-%d')
-            birth_time_str = chart.birth_time.strftime('%H:%M')
-            local_datetime_str = f"{birth_date_str} {birth_time_str}"
-            local_datetime = datetime.strptime(local_datetime_str, '%Y-%m-%d %H:%M')
+        # Convert local time to UTC
+        birth_date_str = chart.birth_date.strftime('%Y-%m-%d')
+        birth_time_str = chart.birth_time.strftime('%H:%M')
+        local_datetime_str = f"{birth_date_str} {birth_time_str}"
+        local_datetime = datetime.strptime(local_datetime_str, '%Y-%m-%d %H:%M')
+        
+        # Localize the datetime
+        local_tz = pytz.timezone(timezone_str)
+        local_datetime = local_tz.localize(local_datetime)
+        
+        # Convert to UTC
+        utc_datetime = local_datetime.astimezone(pytz.UTC)
+        
+        # Create Skyfield time object
+        ts = load.timescale()
+        t = ts.from_datetime(utc_datetime)
+        
+        # Create observer
+        earth = load('de440s.bsp')['earth']
+        observer = earth + Topos(latitude_degrees=chart.latitude, longitude_degrees=chart.longitude)
+        
+        # Calculate ayanamsa
+        ayanamsa = calculate_lahiri_ayanamsa(utc_datetime)
+        
+        # Calculate ascendant using Skyfield
+        tropical_asc = calculate_ascendant(t, observer)
+        sidereal_asc = (tropical_asc - ayanamsa) % 360
+        ascendant_position = format_position(sidereal_asc)
+        
+        # Calculate houses using Whole Sign system with Skyfield
+        houses = calculate_whole_sign_houses(ascendant_position)
+        
+        # Get house meanings
+        house_meanings = get_house_meanings()
+        
+        # Add meanings to houses
+        for house in houses:
+            house['meaning'] = house_meanings.get(house['house'], '')
             
-            # Localize the datetime
-            local_tz = pytz.timezone(timezone_str)
-            local_datetime = local_tz.localize(local_datetime)
-            
-            # Convert to UTC
-            utc_datetime = local_datetime.astimezone(pytz.UTC)
-            
-            # Create Skyfield time object
-            ts = load.timescale()
-            t = ts.from_datetime(utc_datetime)
-            
-            # Create observer
-            earth = load('de440s.bsp')['earth']
-            observer = earth + Topos(latitude_degrees=chart.latitude, longitude_degrees=chart.longitude)
-            
-            # Calculate ayanamsa
-            ayanamsa = calculate_lahiri_ayanamsa(utc_datetime)
-            
-            # Calculate ascendant using Skyfield
-            tropical_asc = calculate_ascendant(t, observer)
-            sidereal_asc = (tropical_asc - ayanamsa) % 360
-            ascendant_position = format_position(sidereal_asc)
-            
-            # Calculate houses using Whole Sign system with Skyfield
-            houses = calculate_whole_sign_houses(ascendant_position)
-            
-            # Get house meanings
-            house_meanings = get_house_meanings()
-            
-            # Add meanings to houses
-            for house in houses:
-                house['meaning'] = house_meanings.get(house['house'], '')
-                
-            ascendant = ascendant_position
-            
-            logging.debug(f"Successfully calculated houses using Skyfield for saved chart - Ascendant: {ascendant_position['formatted']}")
-            
-        except Exception as e:
-            # Fallback to the original method if Skyfield calculation fails
-            logging.error(f"Error calculating houses with Skyfield for saved chart: {str(e)}. Falling back to original method.")
-            jd_ut = calculate_jd_ut(chart.birth_date.strftime('%Y-%m-%d'), 
-                                   chart.birth_time.strftime('%H:%M'))
-            house_data = calculate_house_cusps(jd_ut, chart.latitude, chart.longitude)
-            
-            # Get house meanings
-            house_meanings = get_house_meanings()
-            
-            # Add meanings to houses
-            for house in house_data['houses']:
-                house['meaning'] = house_meanings.get(house['house'], '')
-                
-            ascendant = house_data['ascendant']
-            houses = house_data['houses']
+        ascendant = ascendant_position
+        
+        logging.debug(f"Successfully calculated houses using Skyfield for saved chart - Ascendant: {ascendant_position['formatted']}")
     else:
         # Can't calculate houses without time
         ascendant = None
