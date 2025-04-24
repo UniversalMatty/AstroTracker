@@ -250,6 +250,46 @@ def get_planet_in_sign_interpretation(planet_name, sign_name):
     return interpretations.get(key, f"The specific interpretation for {planet_name} in {sign_name} is not available yet.")
 
 
+def get_ascendant_interpretation(sign_name):
+    """
+    Get interpretation for a specific ascendant sign.
+    
+    Args:
+        sign_name: Name of the ascendant sign
+        
+    Returns:
+        A string with an interpretation of this ascendant sign
+    """
+    # Dictionary of ascendant sign interpretations
+    interpretations = {
+        "Aries": "With Aries Ascendant, you project a dynamic and pioneering presence that others notice immediately. Your natural approach to new situations is direct and action-oriented. In professional settings, you're perceived as someone who takes initiative and leads with confidence. This ascendant gives you a competitive edge and the courage to pursue challenging opportunities that require quick decision-making and bold action.",
+        
+        "Taurus": "With Taurus Ascendant, you present yourself with steady reliability and practical groundedness. Your natural approach to situations is methodical and patient. In professional settings, you're perceived as dependable and solid. This ascendant gives you a natural presence that inspires others to trust your judgment, especially regarding resource management, long-term planning, and creating tangible results.",
+        
+        "Gemini": "With Gemini Ascendant, you project an adaptable, communicative presence. Your natural approach to situations is curious and information-gathering. In professional settings, you're perceived as versatile and quick-thinking. This ascendant gives you exceptional verbal skills and the ability to network effectively across different groups. You excel in environments that reward mental agility and social versatility.",
+        
+        "Cancer": "With Cancer Ascendant, you present yourself with nurturing sensitivity and emotional intelligence. Your natural approach to situations is protective and caring. In professional settings, you're perceived as supportive and intuitive about others' needs. This ascendant gives you a natural ability to create psychological safety for teams and build loyalty through genuine concern for others' wellbeing.",
+        
+        "Leo": "With Leo Ascendant, you project a warm, confident presence that naturally draws attention. Your approach to new situations is generous and self-assured. In professional settings, you're perceived as charismatic and leadership-oriented. This ascendant gives you a natural stage presence and the ability to inspire others through your authentic self-expression and unwavering confidence.",
+        
+        "Virgo": "With Virgo Ascendant, you present yourself with practical precision and analytical clarity. Your natural approach to situations is methodical and improvement-oriented. In professional settings, you're perceived as competent and detail-focused. This ascendant gives you a natural problem-solving orientation and the ability to implement efficient systems that others might overlook.",
+        
+        "Libra": "With Libra Ascendant, you project a harmonious, balanced presence. Your natural approach to situations is diplomatic and partnership-oriented. In professional settings, you're perceived as fair-minded and socially intelligent. This ascendant gives you excellent negotiation skills and the ability to create consensus in diverse teams, making you valuable in collaborative environments.",
+        
+        "Scorpio": "With Scorpio Ascendant, you present yourself with magnetic intensity and perceptive depth. Your natural approach to situations is strategic and investigative. In professional settings, you're perceived as powerful and insightful. This ascendant gives you exceptional ability to understand underlying motivations and navigate complex power dynamics that others might miss.",
+        
+        "Sagittarius": "With Sagittarius Ascendant, you project an optimistic, expansive presence. Your natural approach to situations is philosophical and growth-oriented. In professional settings, you're perceived as inspiring and visionary. This ascendant gives you the ability to see the bigger picture and connect diverse elements into meaningful opportunities, particularly in international or educational contexts.",
+        
+        "Capricorn": "With Capricorn Ascendant, you present yourself with structured composure and professional authority. Your natural approach to situations is disciplined and goal-oriented. In professional settings, you're perceived as reliable and achievement-focused. This ascendant gives you natural executive presence and the ability to navigate organizational hierarchies effectively.",
+        
+        "Aquarius": "With Aquarius Ascendant, you project an innovative, independent presence. Your natural approach to situations is progressive and community-oriented. In professional settings, you're perceived as forward-thinking and principled. This ascendant gives you a natural talent for bringing fresh perspectives to established systems and connecting diverse groups around shared ideals.",
+        
+        "Pisces": "With Pisces Ascendant, you present yourself with intuitive sensitivity and adaptable compassion. Your natural approach to situations is empathetic and receptive. In professional settings, you're perceived as understanding and imaginative. This ascendant gives you exceptional ability to sense emotional undercurrents and create inclusive environments where people feel genuinely understood."
+    }
+    
+    return interpretations.get(sign_name, f"The specific interpretation for {sign_name} Ascendant is not available yet.")
+
+
 def get_house_meaning(house_number, sign_name):
     """
     Get a practical interpretation for a house in a specific sign.
