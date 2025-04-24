@@ -166,50 +166,47 @@ def calculate_ascendant(t, observer):
     Returns:
         Tropical longitude of the ascendant in degrees
     """
-    try:
-        # Get the celestial equator coordinates of the ecliptic point on the eastern horizon
-        ha, dec, dist = observer.at(t).from_altaz(alt_degrees=0, az_degrees=90)
-        
-        # Extract the longitude of the ascendant (convert to degrees)
-        asc_lon = (ha.radians * 180 / math.pi + 180) % 360
-        
-        return asc_lon
+    # Use a simpler, more reliable method for ascendant calculation
+    # This uses standard astronomical formulas for sidereal time and ascendant
     
-    except Exception as e:
-        logging.error(f"Error in calculate_ascendant: {str(e)}")
-        # Use a simpler method as fallback
-        from skyfield.api import Angle
-        from skyfield.almanac import meridian_transits
-        from skyfield.constants import tau
-        
-        # Get RAMC - Right Ascension of the Midheaven
-        # This is a simplified approach that doesn't account for obliquity of the ecliptic
-        greenwich = t.gmst * tau / 24.0  # Greenwich sidereal time in radians
-        local_sidereal_time = greenwich + observer.longitude.radians
-        ramc = local_sidereal_time
-        
-        # Calculate ascendant (approximately)
-        # Using the formula: tan(Asc) = -cos(RAMC) / (sin(RAMC) * cos(obliquity) + tan(latitude) * sin(obliquity))
-        # For simplicity, we'll use a fixed value for the obliquity of the ecliptic
-        obliquity = 23.4392911 * math.pi / 180.0  # Mean obliquity for J2000.0
-        
-        cos_ramc = math.cos(ramc)
-        sin_ramc = math.sin(ramc)
-        cos_obl = math.cos(obliquity)
-        sin_obl = math.sin(obliquity)
-        tan_lat = math.tan(observer.latitude.radians)
-        
-        tan_asc = -cos_ramc / (sin_ramc * cos_obl + tan_lat * sin_obl)
-        asc_rad = math.atan(tan_asc)
-        
-        # Convert to degrees and normalize to 0-360 range
-        asc_deg = (asc_rad * 180.0 / math.pi) % 360
-        
-        # Adjust based on the quadrant of RAMC
-        if (ramc * 180.0 / math.pi) % 360 > 180:
-            asc_deg = (asc_deg + 180) % 360
-            
-        return asc_deg
+    from skyfield.constants import tau
+    
+    # Get Local Sidereal Time
+    # GMST = Greenwich Mean Sidereal Time
+    greenwich_sidereal_hours = t.gmst
+    # Convert to radians
+    greenwich_sidereal_radians = greenwich_sidereal_hours * tau / 24.0
+    
+    # Add the observer's longitude to get Local Sidereal Time (LST)
+    longitude_radians = math.radians(observer.longitude.degrees)
+    lst_radians = greenwich_sidereal_radians + longitude_radians
+    
+    # Normalize to 0-2π
+    lst_radians = lst_radians % tau
+    
+    # Convert LST to degrees
+    lst_degrees = math.degrees(lst_radians)
+    
+    # Obliquity of the ecliptic (approx. 23.4 degrees)
+    obliquity_radians = math.radians(23.4392911)
+    
+    # Observer's latitude
+    latitude_radians = math.radians(observer.latitude.degrees)
+    
+    # Calculate ascendant using the standard formula
+    tan_term = math.tan(latitude_radians) * math.cos(obliquity_radians)
+    sin_lst = math.sin(lst_radians)
+    cos_lst = math.cos(lst_radians)
+    
+    # Formula: tan(ascendant) = -cos(LST) / (sin(LST)*cos(ε) + tan(φ)*sin(ε))
+    # where ε is obliquity and φ is latitude
+    denominator = sin_lst * math.cos(obliquity_radians) + tan_term * math.sin(obliquity_radians)
+    ascendant_radians = math.atan2(-cos_lst, denominator)
+    
+    # Convert to degrees and normalize to 0-360 range
+    ascendant_degrees = math.degrees(ascendant_radians) % 360
+    
+    return ascendant_degrees
 
 def calculate_whole_sign_houses(ascendant_position):
     """
@@ -584,15 +581,13 @@ def view_chart(chart_id):
     
     # Calculate house cusps and ascendant (lagna) for viewing
     if chart.birth_time:
-        # Use Skyfield for house and ascendant calculations
-        from skyfield_houses import calculate_ascendant, calculate_whole_sign_houses, format_position, calculate_lahiri_ayanamsa
+        # Use our internal functions for house and ascendant calculations
         from skyfield.api import load, Topos
         import pytz
         from timezonefinder import TimezoneFinder
         
-        # Get timezone
-        tf = TimezoneFinder()
-        timezone_str = tf.timezone_at(lat=chart.latitude, lng=chart.longitude)
+        # Get timezone using our internal function
+        timezone_str = get_timezone_from_coordinates(chart.latitude, chart.longitude)
         if not timezone_str:
             timezone_str = "UTC"
             
@@ -610,17 +605,15 @@ def view_chart(chart_id):
         utc_datetime = local_datetime.astimezone(pytz.UTC)
         
         # Create Skyfield time object
-        ts = load.timescale()
         t = ts.from_datetime(utc_datetime)
         
         # Create observer
-        earth = load('de440s.bsp')['earth']
         observer = earth + Topos(latitude_degrees=chart.latitude, longitude_degrees=chart.longitude)
         
         # Calculate ayanamsa
         ayanamsa = calculate_lahiri_ayanamsa(utc_datetime)
         
-        # Calculate ascendant using Skyfield
+        # Calculate ascendant using our internal function
         tropical_asc = calculate_ascendant(t, observer)
         sidereal_asc = (tropical_asc - ayanamsa) % 360
         ascendant_position = format_position(sidereal_asc)
