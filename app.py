@@ -682,7 +682,17 @@ def calculate():
                 houses = calculate_equal_houses(ascendant_position)
             else:  # Default to whole_sign
                 houses = calculate_whole_sign_houses(ascendant_position)
-                
+            
+            # Add the house system info to each house
+            house_system_display = "Equal Houses" if house_system.lower() == 'equal' else "Whole Sign"
+            for house in houses:
+                house["system"] = house_system_display
+            
+            # Log house data to debug
+            logging.debug(f"HOUSE SYSTEM SELECTED: {house_system}")
+            logging.debug(f"Ascendant: {ascendant_position['sign']} at {ascendant_position['degree']}°")
+            logging.debug(f"House 1 sign: {houses[0]['sign']}")
+            
             # Add meanings to houses
             for house in houses:
                 house["meaning"] = get_house_meaning(house["house"], house["sign"])

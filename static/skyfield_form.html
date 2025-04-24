@@ -165,13 +165,19 @@
                     house_system: houseSystem
                 };
                 
-                // Call API
+                // Call API - use /calculate route which already has the form handling logic
                 fetch('/calculate', {
                     method: 'POST',
                     headers: {
-                        'Content-Type': 'application/json'
+                        'Content-Type': 'application/x-www-form-urlencoded'
                     },
-                    body: JSON.stringify(data)
+                    body: new URLSearchParams({
+                        'dob_date': data.birth_date,
+                        'dob_time': data.birth_time,
+                        'city': data.city,
+                        'country': data.country,
+                        'house_system': data.house_system
+                    })
                 })
                 .then(response => {
                     if (!response.ok) {
