@@ -366,7 +366,7 @@ def calculate():
             timezone_str = get_timezone_from_coordinates(latitude, longitude)
             if not timezone_str:
                 timezone_str = "UTC"
-            logger.debug(f"Timezone: {timezone_str}")
+            logging.debug(f"Timezone: {timezone_str}")
                 
             # Convert local time to UTC
             local_datetime_str = f"{dob_date} {dob_time or '12:00'}"
@@ -378,7 +378,7 @@ def calculate():
             
             # Convert to UTC
             utc_datetime = local_datetime.astimezone(pytz.UTC)
-            logger.debug(f"UTC datetime: {utc_datetime}")
+            logging.debug(f"UTC datetime: {utc_datetime}")
             
             # Create Skyfield time object
             t = ts.from_datetime(utc_datetime)
@@ -388,13 +388,13 @@ def calculate():
             
             # Calculate ayanamsa
             ayanamsa = calculate_lahiri_ayanamsa(utc_datetime)
-            logger.debug(f"Ayanamsa: {ayanamsa}")
+            logging.debug(f"Ayanamsa: {ayanamsa}")
             
             # Calculate ascendant using Skyfield
             tropical_asc = calculate_ascendant(t, observer)
             sidereal_asc = (tropical_asc - ayanamsa) % 360
             ascendant_position = format_position(sidereal_asc)
-            logger.debug(f"Ascendant: {ascendant_position['formatted']} (Skyfield calculation)")
+            logging.debug(f"Ascendant: {ascendant_position['formatted']} (Skyfield calculation)")
             
             # Calculate houses using Whole Sign system with Skyfield
             houses = calculate_whole_sign_houses(ascendant_position)
@@ -415,11 +415,11 @@ def calculate():
             # Add information that this was calculated with Skyfield
             house_data['calculation_method'] = "Skyfield (High Precision)"
             
-            logger.info(f"Successfully calculated houses using Skyfield - Ascendant: {ascendant_position['formatted']}")
+            logging.info(f"Successfully calculated houses using Skyfield - Ascendant: {ascendant_position['formatted']}")
                 
         except Exception as e:
             # Fallback to the original method if Skyfield calculation fails
-            logger.error(f"Error calculating houses with Skyfield: {str(e)}. Falling back to original method.")
+            logging.error(f"Error calculating houses with Skyfield: {str(e)}. Falling back to original method.")
             jd_ut = calculate_jd_ut(dob_date, dob_time)
             house_data = calculate_house_cusps(jd_ut, latitude, longitude)
             house_data['calculation_method'] = "Swiss Ephemeris (Fallback)"
@@ -446,7 +446,8 @@ def calculate():
             birth_details=birth_details,
             planets=planets,
             ascendant=house_data['ascendant'],
-            houses=house_data['houses']
+            houses=house_data['houses'],
+            calculation_method=house_data.get('calculation_method', 'Skyfield (High Precision)')
         )
         
     except Exception as e:
@@ -648,7 +649,8 @@ def view_chart(chart_id):
         chart_id=chart_id,
         notes=chart.notes,
         ascendant=ascendant,
-        houses=houses
+        houses=houses,
+        calculation_method='Skyfield (High Precision)'
     )
 
 @app.route('/test_ascendant')
