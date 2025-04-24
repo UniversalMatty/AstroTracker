@@ -435,8 +435,14 @@ def calculate():
                 sign = get_zodiac_sign_from_longitude(sidereal_longitude)
                 degree_in_sign = sidereal_longitude % 30
                 
-                # Format position string
-                formatted_position = f"{sign} {degree_in_sign:.2f}°"
+                # Format position in degrees, minutes, seconds format
+                degree_int = int(degree_in_sign)
+                minutes_float = (degree_in_sign - degree_int) * 60
+                minutes_int = int(minutes_float)
+                seconds_int = int((minutes_float - minutes_int) * 60)
+                
+                # Format DMS string
+                formatted_position = f"{sign} {degree_int}°{minutes_int}'{seconds_int}\""
                 if retrograde:
                     formatted_position += " (R)"
                 
@@ -458,7 +464,7 @@ def calculate():
                     "longitude": 0.0,
                     "sign": "Aries",
                     "retrograde": False,
-                    "formatted_position": "Aries 0.00° (Error)"
+                    "formatted_position": "Aries 0°0'0\" (Error)"
                 })
         
         # Calculate Rahu and Ketu
@@ -468,23 +474,39 @@ def calculate():
             # Rahu (North Node)
             rahu_sign = get_zodiac_sign_from_longitude(rahu_longitude)
             rahu_degree = rahu_longitude % 30
+            
+            # Format in DMS
+            rahu_degree_int = int(rahu_degree)
+            rahu_minutes_float = (rahu_degree - rahu_degree_int) * 60
+            rahu_minutes_int = int(rahu_minutes_float)
+            rahu_seconds_int = int((rahu_minutes_float - rahu_minutes_int) * 60)
+            rahu_formatted = f"{rahu_sign} {rahu_degree_int}°{rahu_minutes_int}'{rahu_seconds_int}\" (R)"
+            
             planets.append({
                 "name": "Rahu",
                 "longitude": rahu_longitude,
                 "sign": rahu_sign,
                 "retrograde": True,  # Nodes are always considered retrograde in Vedic astrology
-                "formatted_position": f"{rahu_sign} {rahu_degree:.2f}° (R)"
+                "formatted_position": rahu_formatted
             })
             
             # Ketu (South Node)
             ketu_sign = get_zodiac_sign_from_longitude(ketu_longitude)
             ketu_degree = ketu_longitude % 30
+            
+            # Format in DMS
+            ketu_degree_int = int(ketu_degree)
+            ketu_minutes_float = (ketu_degree - ketu_degree_int) * 60
+            ketu_minutes_int = int(ketu_minutes_float)
+            ketu_seconds_int = int((ketu_minutes_float - ketu_minutes_int) * 60)
+            ketu_formatted = f"{ketu_sign} {ketu_degree_int}°{ketu_minutes_int}'{ketu_seconds_int}\" (R)"
+            
             planets.append({
                 "name": "Ketu",
                 "longitude": ketu_longitude,
                 "sign": ketu_sign,
                 "retrograde": True,  # Nodes are always considered retrograde in Vedic astrology
-                "formatted_position": f"{ketu_sign} {ketu_degree:.2f}° (R)"
+                "formatted_position": ketu_formatted
             })
             
         except Exception as e:
@@ -495,14 +517,14 @@ def calculate():
                 "longitude": 0.0,
                 "sign": "Aries",
                 "retrograde": True,
-                "formatted_position": "Aries 0.00° (R) (Error)"
+                "formatted_position": "Aries 0°0'0\" (R) (Error)"
             })
             planets.append({
                 "name": "Ketu",
                 "longitude": 180.0,
                 "sign": "Libra",
                 "retrograde": True,
-                "formatted_position": "Libra 0.00° (R) (Error)"
+                "formatted_position": "Libra 0°0'0\" (R) (Error)"
             })
         
         # Add nakshatra information and descriptions to planets
