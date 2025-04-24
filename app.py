@@ -3,7 +3,7 @@ import logging
 import math
 import traceback
 from datetime import datetime
-from flask import Flask, render_template, request, redirect, url_for, flash, session, jsonify
+from flask import Flask, render_template, request, redirect, url_for, flash, session, jsonify, Response
 from werkzeug.utils import secure_filename
 import tempfile
 import json
@@ -880,6 +880,41 @@ def view_chart(chart_id):
         houses=houses,
         calculation_method='Skyfield (High Precision)'
     )
+
+@app.route('/export_chart_json', methods=['GET'])
+def export_chart_json():
+    """Export the current chart data as JSON file"""
+    try:
+        # Get data from session
+        if 'planets' not in session or 'birth_details' not in session:
+            flash('No chart data available to export. Please calculate a chart first.', 'warning')
+            return redirect(url_for('index'))
+            
+        # Create a complete chart object
+        chart_data = {
+            'birth_details': session['birth_details'],
+            'planets': session['planets'],
+            'ascendant': session.get('ascendant'),
+            'houses': session.get('houses'),
+            'generated_at': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+            'calculation_method': 'Sidereal (Lahiri Ayanamsa)'
+        }
+        
+        # Create the JSON response
+        response = Response(
+            json.dumps(chart_data, indent=2),
+            mimetype='application/json',
+            headers={
+                'Content-Disposition': f'attachment;filename=birth_chart_{session["birth_details"]["date"].replace("-", "")}.json'
+            }
+        )
+        
+        return response
+        
+    except Exception as e:
+        logging.error(f"Error exporting chart as JSON: {str(e)}")
+        flash(f'Error exporting chart: {str(e)}', 'danger')
+        return redirect(url_for('index'))
 
 @app.route('/test_ascendant')
 def test_ascendant():

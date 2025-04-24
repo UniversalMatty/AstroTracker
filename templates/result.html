@@ -38,7 +38,23 @@
                 <div class="col-md-6">
                     <p><strong>Location:</strong> {{ birth_details.location }}</p>
                     <p><strong>Coordinates:</strong> {{ birth_details.coordinates[1] }}° N, {{ birth_details.coordinates[0] }}° E</p>
-
+                </div>
+            </div>
+            
+            <!-- Export/Save Options -->
+            <div class="row mt-3">
+                <div class="col-12">
+                    <div class="d-flex gap-2 justify-content-end">
+                        <!-- Save to Database -->
+                        <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#saveChartModal">
+                            <i class="fas fa-save me-1"></i> Save Chart
+                        </button>
+                        
+                        <!-- Export as JSON -->
+                        <a href="{{ url_for('export_chart_json') }}" class="btn btn-secondary">
+                            <i class="fas fa-file-code me-1"></i> Export JSON
+                        </a>
+                    </div>
                 </div>
             </div>
         </div>
@@ -191,36 +207,7 @@
         <!-- Planet data for database storage -->
         <div id="planets-data" style="display:none;"></div>
         
-        <!-- Save Chart Form -->
-        <div class="card mb-4">
-            <div class="card-header bg-success text-white">
-                <h3 class="mb-0">Save This Chart</h3>
-            </div>
-            <div class="card-body">
-                <form action="{{ url_for('save_chart') }}" method="post">
-                    <!-- Hidden fields to store all the chart data -->
-                    <input type="hidden" name="name" value="{{ birth_details.name }}">
-                    <input type="hidden" name="birth_date" value="{{ birth_details.date }}">
-                    <input type="hidden" name="birth_time" value="{{ birth_details.time }}">
-                    <input type="hidden" name="city" value="{{ birth_details.location.split(',')[0] | trim }}">
-                    <input type="hidden" name="country" value="{{ birth_details.location.split(',')[1] | trim }}">
-                    <input type="hidden" name="latitude" value="{{ birth_details.coordinates[1] }}">
-                    <input type="hidden" name="longitude" value="{{ birth_details.coordinates[0] }}">
-                    <input type="hidden" name="planets_json" value="{{ planets|tojson|safe }}">
-                    
-                    <div class="mb-3">
-                        <label for="notes" class="form-label">Notes (optional)</label>
-                        <textarea class="form-control" id="notes" name="notes" rows="3" placeholder="Add any notes about this chart...">{{ notes|default('') }}</textarea>
-                    </div>
-                    
-                    <div class="text-center">
-                        <button type="submit" class="btn btn-success">
-                            <i class="fas fa-save me-2"></i> Save Chart
-                        </button>
-                    </div>
-                </form>
-            </div>
-        </div>
+
         
         <div class="text-center mt-4 mb-4">
             <a href="{{ url_for('index') }}" class="btn btn-outline-primary me-2">
@@ -241,6 +228,50 @@
                 </small>
             </p>
         </footer>
+    </div>
+    
+    <!-- Save Chart Modal -->
+    <div class="modal fade" id="saveChartModal" tabindex="-1" aria-labelledby="saveChartModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header bg-primary text-white">
+                    <h5 class="modal-title" id="saveChartModalLabel">
+                        <i class="fas fa-save me-2"></i> Save Birth Chart
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form action="{{ url_for('save_chart') }}" method="post" id="saveChartForm">
+                        <!-- Hidden fields to store all the chart data -->
+                        <input type="hidden" name="name" value="{{ birth_details.name }}">
+                        <input type="hidden" name="birth_date" value="{{ birth_details.date }}">
+                        <input type="hidden" name="birth_time" value="{{ birth_details.time }}">
+                        <input type="hidden" name="city" value="{{ birth_details.location.split(',')[0] | trim }}">
+                        <input type="hidden" name="country" value="{{ birth_details.location.split(',')[1] | trim }}">
+                        <input type="hidden" name="latitude" value="{{ birth_details.coordinates[1] }}">
+                        <input type="hidden" name="longitude" value="{{ birth_details.coordinates[0] }}">
+                        <input type="hidden" name="planets_json" value="{{ planets|tojson|safe }}">
+                        
+                        <div class="mb-3">
+                            <label for="chart-name" class="form-label">Chart Name</label>
+                            <input type="text" class="form-control" id="chart-name" name="name" value="{{ birth_details.name }}'s Chart" required>
+                            <div class="form-text">Give this chart a meaningful name for easy reference later.</div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="modal-notes" class="form-label">Notes (optional)</label>
+                            <textarea class="form-control" id="modal-notes" name="notes" rows="3" placeholder="Add any notes about this chart...">{{ notes|default('') }}</textarea>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" form="saveChartForm" class="btn btn-primary">
+                        <i class="fas fa-save me-1"></i> Save Chart
+                    </button>
+                </div>
+            </div>
+        </div>
     </div>
     
     <!-- Bootstrap JS Bundle with Popper -->
