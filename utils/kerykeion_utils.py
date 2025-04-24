@@ -15,6 +15,41 @@ def degrees_to_dms(degrees):
     s = int((m_float - m) * 60)
     return d, m, s
 
+def calculate_lahiri_ayanamsa(date):
+    """
+    Calculate the Lahiri ayanamsa for a given date.
+    The Lahiri ayanamsa was approximately 23°15' on Jan 1, 1950,
+    and increases by about 50.3 seconds per year.
+    
+    Args:
+        date: Date components as year, month, day
+        
+    Returns:
+        The Lahiri ayanamsa value in degrees for the given date
+    """
+    year, month, day = date
+    
+    # Reference date: January 1, 1950
+    ref_year = 1950
+    ref_month = 1
+    ref_day = 1
+    ref_ayanamsa = 23.25  # 23°15' in decimal
+    
+    # Calculate years since reference date
+    years_diff = year - ref_year
+    
+    # Adjust for partial year
+    if month < ref_month or (month == ref_month and day < ref_day):
+        years_diff -= 1
+    
+    # Ayanamsa increases by about 50.3 seconds per year (in degrees)
+    seconds_per_year = 50.3 / 3600  # Convert to degrees
+    
+    # Calculate the ayanamsa
+    ayanamsa = ref_ayanamsa + (years_diff * seconds_per_year)
+    
+    return ayanamsa
+
 def calculate_kerykeion_chart(birth_date, birth_time, city, country, latitude=None, longitude=None):
     """
     Calculate a birth chart using Kerykeion.
@@ -39,7 +74,7 @@ def calculate_kerykeion_chart(birth_date, birth_time, city, country, latitude=No
         if birth_time:
             hour, minute = map(int, birth_time.split(':'))
         
-        # Create the astrological chart
+        # Create the astrological chart with tropical zodiac
         chart = KrInstance(
             name="Subject",
             year=year, 
@@ -51,15 +86,27 @@ def calculate_kerykeion_chart(birth_date, birth_time, city, country, latitude=No
             nation=country,
             lat=latitude,
             lng=longitude,
-            zodiac_type='Sidereal'  # Use sidereal zodiac for Vedic astrology
+            zodiac_type='Tropic'  # Use tropical zodiac and we'll apply Lahiri ayanamsa
         )
         
-        # Extract the ascendant (first house)
-        ascendant = chart.first_house
+        # Calculate Lahiri ayanamsa for this date
+        ayanamsa = calculate_lahiri_ayanamsa((year, month, day))
+        logging.debug(f"Calculated Lahiri ayanamsa for {year}-{month}-{day}: {ayanamsa}°")
         
-        # Get the ascendant sign and position
-        ascendant_sign = ascendant.sign  # Three-letter abbreviation
-        sign_num = ascendant.sign_num    # Number of the sign
+        # Extract the tropical ascendant
+        tropical_ascendant = chart.first_house
+        
+        # Convert to sidereal (Lahiri ayanamsa)
+        tropical_abs_pos = tropical_ascendant.abs_pos
+        sidereal_abs_pos = (tropical_abs_pos - ayanamsa) % 360
+        
+        # Calculate the sign and position within sign
+        sign_num = int(sidereal_abs_pos / 30)
+        position_in_sign = sidereal_abs_pos % 30
+        
+        # Get sign abbreviation based on sign number
+        sign_abbrs = ['Ari', 'Tau', 'Gem', 'Can', 'Leo', 'Vir', 'Lib', 'Sco', 'Sag', 'Cap', 'Aqu', 'Pis']
+        ascendant_sign = sign_abbrs[sign_num]
         
         # Map abbreviations to full sign names
         sign_map = {
@@ -80,27 +127,35 @@ def calculate_kerykeion_chart(birth_date, birth_time, city, country, latitude=No
         # Get the full sign name
         full_sign_name = sign_map.get(ascendant_sign, ascendant_sign)
         
-        # Get the position within the sign
-        ascendant_position = ascendant.position
-        
         # Format ascendant in degrees, minutes, seconds
-        degrees, minutes, seconds = degrees_to_dms(ascendant_position)
+        degrees, minutes, seconds = degrees_to_dms(position_in_sign)
         formatted_position = f"{full_sign_name} {degrees}°{minutes}'{seconds}\""
+        
+        logging.debug(f"Tropical ascendant: {tropical_ascendant.abs_pos}°, Ayanamsa: {ayanamsa}°, Sidereal: {sidereal_abs_pos}°")
+        logging.debug(f"Sidereal ascendant: {full_sign_name} {degrees}°{minutes}'{seconds}\"")
+        
         
         # Extract planet positions
         planets = []
         for planet in chart.planets_list:
             # Get planet details
             planet_name = planet.name
-            sign_abbr = planet.sign
-            position = planet.position
+            tropical_position = planet.abs_pos
             retrograde = getattr(planet, 'retrograde', False)
             
-            # Get full sign name
+            # Convert to sidereal
+            sidereal_pos = (tropical_position - ayanamsa) % 360
+            
+            # Calculate sign
+            sign_num = int(sidereal_pos / 30)
+            position_in_sign = sidereal_pos % 30
+            
+            # Get sign abbreviation and full name
+            sign_abbr = sign_abbrs[sign_num]
             full_sign = sign_map.get(sign_abbr, sign_abbr)
             
             # Format position in DMS
-            deg, mins, secs = degrees_to_dms(position)
+            deg, mins, secs = degrees_to_dms(position_in_sign)
             formatted_pos = f"{full_sign} {deg}°{mins}'{secs}\""
             if retrograde:
                 formatted_pos += " (R)"
@@ -108,7 +163,7 @@ def calculate_kerykeion_chart(birth_date, birth_time, city, country, latitude=No
             # Create planet data
             planet_data = {
                 "name": planet_name,
-                "longitude": position,
+                "longitude": sidereal_pos,
                 "sign": full_sign,
                 "retrograde": retrograde,
                 "formatted_position": formatted_pos
@@ -119,36 +174,34 @@ def calculate_kerykeion_chart(birth_date, birth_time, city, country, latitude=No
             
             planets.append(planet_data)
         
-        # Extract house positions
+        # Calculate houses using Whole Sign system based on the sidereal ascendant
         houses = []
-        for i in range(1, 13):
-            # Get the house attribute
-            house_attr_name = f"house_{i}"
-            if hasattr(chart, house_attr_name):
-                house = getattr(chart, house_attr_name)
-                sign_abbr = house.sign
-                house_position = house.position
-                
-                # Get full sign name
-                full_sign = sign_map.get(sign_abbr, sign_abbr)
-                
-                # Format house position
-                house_deg, house_min, house_sec = degrees_to_dms(house_position)
-                house_formatted = f"{full_sign} {house_deg}°{house_min}'{house_sec}\""
-                
-                house_data = {
-                    "house": i,
-                    "sign": full_sign,
-                    "longitude": house_position,
-                    "formatted": house_formatted
-                }
-                houses.append(house_data)
+        
+        # For Whole Sign houses, we use the ascendant's sign as the 1st house
+        # and each subsequent sign becomes the next house
+        for i in range(12):
+            house_num = i + 1
+            house_sign_num = (sign_num + i) % 12
+            house_sign_abbr = sign_abbrs[house_sign_num]
+            house_sign_full = sign_map.get(house_sign_abbr, house_sign_abbr)
+            
+            # House cusp is at 0 degrees of the sign
+            house_deg, house_min, house_sec = 0, 0, 0
+            house_formatted = f"{house_sign_full} {house_deg}°{house_min}'{house_sec}\""
+            
+            house_data = {
+                "house": house_num,
+                "sign": house_sign_full,
+                "longitude": house_sign_num * 30,  # Start of the sign
+                "formatted": house_formatted
+            }
+            houses.append(house_data)
         
         # Create the ascendant position object for compatibility
         ascendant_position_obj = {
-            'longitude': ascendant.abs_pos,
+            'longitude': sidereal_abs_pos,
             'sign': full_sign_name,
-            'degree': ascendant.position,
+            'degree': position_in_sign,
             'formatted': formatted_position
         }
         
