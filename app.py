@@ -593,7 +593,7 @@ def calculate():
             
             # Add meanings to houses
             for house in houses:
-                house['meaning'] = house_meanings.get(house['house'], '')
+                house["meaning"] = get_house_meaning(house["house"], house["sign"])
             
             # Create the house_data structure that the rest of the code expects
             house_data = {
@@ -623,7 +623,7 @@ def calculate():
             
             # Add meanings to houses
             for house in houses:
-                house['meaning'] = house_meanings.get(house['house'], '')
+                house["meaning"] = get_house_meaning(house["house"], house["sign"])
                 
             # Create the house_data structure that the rest of the code expects
             house_data = {
@@ -840,7 +840,7 @@ def view_chart(chart_id):
             
             # Add meanings to houses
             for house in houses:
-                house['meaning'] = house_meanings.get(house['house'], '')
+                house["meaning"] = get_house_meaning(house["house"], house["sign"])
                 
         except Exception as asc_error:
             logging.error(f"DETAILED Ascendant calculation error with Kerykeion in view_chart: {str(asc_error)}")
@@ -860,7 +860,7 @@ def view_chart(chart_id):
             
             # Add meanings to houses
             for house in houses:
-                house['meaning'] = house_meanings.get(house['house'], '')
+                house["meaning"] = get_house_meaning(house["house"], house["sign"])
                 
         ascendant = ascendant_position
         
