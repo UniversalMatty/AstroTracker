@@ -231,14 +231,42 @@ def calculate_whole_sign_houses(ascendant_position):
     Returns:
         List of house dictionaries, each with sign and other details
     """
-    houses = []
-    ascendant_sign = ascendant_position['sign']
-    sign_index = ZODIAC_SIGNS.index(ascendant_sign)
+    # Add extra logging for debugging
+    logging.debug("======== WHOLE SIGN HOUSE CALCULATION ========")
+    logging.debug(f"Ascendant position data: {ascendant_position}")
     
+    houses = []
+    
+    # Make sure we have a valid ascendant sign
+    if not ascendant_position or 'sign' not in ascendant_position:
+        logging.error("Invalid ascendant position data. Missing 'sign' key.")
+        return houses
+    
+    # Get ascendant sign
+    ascendant_sign = ascendant_position['sign']
+    logging.debug(f"Ascendant sign: {ascendant_sign}")
+    
+    # Define zodiac signs again locally to ensure consistency
+    zodiac_signs = [
+        'Aries', 'Taurus', 'Gemini', 'Cancer', 
+        'Leo', 'Virgo', 'Libra', 'Scorpio',
+        'Sagittarius', 'Capricorn', 'Aquarius', 'Pisces'
+    ]
+    
+    # Find the index of the ascendant sign
+    try:
+        sign_index = zodiac_signs.index(ascendant_sign)
+    except ValueError:
+        logging.error(f"Could not find '{ascendant_sign}' in zodiac signs list")
+        return houses
+    
+    logging.debug(f"Ascendant sign index: {sign_index}")
+    
+    # Calculate houses
     for i in range(12):
         house_num = i + 1
         current_sign_index = (sign_index + i) % 12
-        current_sign = ZODIAC_SIGNS[current_sign_index]
+        current_sign = zodiac_signs[current_sign_index]
         
         # In Whole Sign system, houses start at 0° of the sign 
         # regardless of where the ascendant is within the sign
@@ -253,6 +281,15 @@ def calculate_whole_sign_houses(ascendant_position):
             "system": "Whole Sign"
         }
         houses.append(house)
+        
+        logging.debug(f"House {house_num}: {current_sign} (index {current_sign_index})")
+    
+    # Check the first house specifically
+    if houses and len(houses) > 0:
+        logging.debug(f"FIRST HOUSE SIGN: {houses[0]['sign']}")
+        logging.debug(f"SHOULD MATCH ASCENDANT: {ascendant_sign}")
+    
+    logging.debug("==========================================")
     
     return houses
 
@@ -271,9 +308,24 @@ def calculate_equal_houses(ascendant_position):
     Returns:
         List of house dictionaries, each with sign and degree details
     """
+    # Add debug logging
+    logging.debug("======== EQUAL HOUSES CALCULATION ========")
+    logging.debug(f"Ascendant position data: {ascendant_position}")
+    
     houses = []
+    
+    # Make sure we have valid ascendant data
+    if not ascendant_position or 'longitude' not in ascendant_position:
+        logging.error("Invalid ascendant position data for Equal Houses calculation")
+        return houses
+    
     ascendant_longitude = ascendant_position['longitude']
-    ascendant_degree = ascendant_position['degree']
+    ascendant_sign = ascendant_position['sign']
+    ascendant_degree = ascendant_position.get('degree', ascendant_longitude % 30)
+    
+    logging.debug(f"Ascendant longitude: {ascendant_longitude}°")
+    logging.debug(f"Ascendant sign: {ascendant_sign}")
+    logging.debug(f"Ascendant degree in sign: {ascendant_degree}°")
     
     for i in range(12):
         house_num = i + 1
@@ -296,6 +348,14 @@ def calculate_equal_houses(ascendant_position):
             "system": "Equal Houses"
         }
         houses.append(house)
+        
+        logging.debug(f"House {house_num}: {house_sign} {degree_int}°{minutes_int}'{seconds_int}\"")
+    
+    # Check the first house specifically
+    if houses and len(houses) > 0:
+        logging.debug(f"FIRST HOUSE SIGN: {houses[0]['sign']}")
+    
+    logging.debug("==========================================")
     
     return houses
 
