@@ -6,7 +6,7 @@ of planets in signs rather than general descriptions of planets or signs.
 
 def build_houses_from_ascendant(ascendant_sign):
     """
-    NEW IMPLEMENTATION: Build houses using the Whole Sign system
+    COMPLETELY NEW IMPLEMENTATION: Build houses using the Whole Sign system
     
     1. First house has the exact same sign as the Ascendant (Lagna)
     2. Subsequent houses have consecutive zodiac signs
@@ -20,50 +20,82 @@ def build_houses_from_ascendant(ascendant_sign):
         List of dictionaries containing house data
     """
     import logging
+    import traceback
     
-    # Standard zodiac signs in order
-    zodiac_signs = [
-        'Aries', 'Taurus', 'Gemini', 'Cancer', 
-        'Leo', 'Virgo', 'Libra', 'Scorpio',
-        'Sagittarius', 'Capricorn', 'Aquarius', 'Pisces'
-    ]
-    
-    # Validate the ascendant sign
-    if ascendant_sign not in zodiac_signs:
-        logging.warning(f"Invalid ascendant sign '{ascendant_sign}', defaulting to Aries")
-        ascendant_sign = 'Aries'
-    
-    # Find the index of the ascendant sign
-    asc_index = zodiac_signs.index(ascendant_sign)
-    
-    # Create the houses array with the Whole Sign system:
-    # 1st house has the ascendant sign, subsequent houses have consecutive signs
-    houses = []
-    
-    for house_num in range(1, 13):  # Houses 1-12
-        # Calculate the sign index for this house (wrapping around the zodiac)
-        sign_index = (asc_index + house_num - 1) % 12
-        sign = zodiac_signs[sign_index]
+    try:
+        # Standard zodiac signs in order
+        zodiac_signs = [
+            'Aries', 'Taurus', 'Gemini', 'Cancer', 
+            'Leo', 'Virgo', 'Libra', 'Scorpio',
+            'Sagittarius', 'Capricorn', 'Aquarius', 'Pisces'
+        ]
         
-        # Add house to the list
-        house = {
-            "house": house_num,
-            "sign": sign,
-            "system": "Whole Sign"
-        }
-        houses.append(house)
-    
-    # Log the houses (for debugging)
-    logging.debug(f"Ascendant sign: {ascendant_sign}")
-    logging.debug(f"House 1 sign: {houses[0]['sign']}")
-    
-    # Double-check that House 1 matches the Ascendant sign
-    if houses[0]['sign'] != ascendant_sign:
-        logging.error(f"House calculation error: House 1 sign ({houses[0]['sign']}) doesn't match ascendant ({ascendant_sign})")
-        # Force correct it (emergency fallback)
-        houses[0]['sign'] = ascendant_sign
-    
-    return houses
+        # Log the input for debugging
+        logging.warning(f"BUILD HOUSES - INPUT ASCENDANT SIGN: '{ascendant_sign}' (type: {type(ascendant_sign).__name__})")
+        
+        # Validate and standardize the ascendant sign
+        if ascendant_sign not in zodiac_signs:
+            logging.warning(f"BUILD HOUSES - Invalid ascendant sign '{ascendant_sign}', defaulting to Aries")
+            ascendant_sign = 'Aries'
+        
+        # Find the index of the ascendant sign
+        asc_index = zodiac_signs.index(ascendant_sign)
+        logging.warning(f"BUILD HOUSES - Ascendant index in zodiac array: {asc_index}")
+        
+        # Create the houses array with the Whole Sign system:
+        # 1st house has the ascendant sign, subsequent houses have consecutive signs
+        houses = []
+        
+        for house_num in range(1, 13):  # Houses 1-12
+            # Calculate the sign index for this house (wrapping around the zodiac)
+            sign_index = (asc_index + house_num - 1) % 12
+            sign = zodiac_signs[sign_index]
+            
+            # Add house to the list
+            house = {
+                "house": house_num,
+                "sign": sign,
+                "system": "Whole Sign"
+            }
+            houses.append(house)
+        
+        # Log the final house array for debugging
+        logging.warning(f"BUILD HOUSES - First house sign: '{houses[0]['sign']}'")
+        logging.warning(f"BUILD HOUSES - All houses: {[(h['house'], h['sign']) for h in houses]}")
+        
+        # Final verification to guarantee House 1 matches Ascendant
+        if houses[0]['sign'] != ascendant_sign:
+            logging.error(f"BUILD HOUSES - CRITICAL ERROR: House 1 sign ({houses[0]['sign']}) doesn't match ascendant ({ascendant_sign})")
+            # Force correct the first house sign
+            houses[0]['sign'] = ascendant_sign
+            logging.warning(f"BUILD HOUSES - FIXED House 1 sign to: {houses[0]['sign']}")
+        
+        return houses
+        
+    except Exception as e:
+        # Log any exceptions that occur during house calculation
+        logging.error(f"BUILD HOUSES - Exception in build_houses_from_ascendant: {str(e)}")
+        logging.error(f"BUILD HOUSES - Traceback: {traceback.format_exc()}")
+        
+        # Create a fallback house array with Aries as the first house
+        logging.warning("BUILD HOUSES - Using emergency fallback house calculation (Aries-based)")
+        houses = []
+        zodiac_signs = [
+            'Aries', 'Taurus', 'Gemini', 'Cancer', 
+            'Leo', 'Virgo', 'Libra', 'Scorpio',
+            'Sagittarius', 'Capricorn', 'Aquarius', 'Pisces'
+        ]
+        
+        for house_num in range(1, 13):
+            sign_index = (house_num - 1) % 12
+            house = {
+                "house": house_num,
+                "sign": zodiac_signs[sign_index],
+                "system": "Whole Sign (Emergency Fallback)"
+            }
+            houses.append(house)
+        
+        return houses
 
 # Legacy function kept for backwards compatibility
 def calculate_simple_houses(ascendant_sign):

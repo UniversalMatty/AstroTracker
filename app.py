@@ -752,15 +752,57 @@ def calculate():
                 'houses': houses
             }
             
-            # Use our completely new implementation for house calculation
-            from utils.position_interpretations import build_houses_from_ascendant
+            logging.warning(f"⚠️ COMPLETELY NEW APPROACH - Calculating houses directly inside app.py")
             
-            # Get the ascendant sign directly from the position data
+            # We will NOT use any external function for house calculation at all
+            # Instead, we'll directly create the houses array right here
+            
+            # Standard zodiac signs in order
+            zodiac_signs = [
+                'Aries', 'Taurus', 'Gemini', 'Cancer', 
+                'Leo', 'Virgo', 'Libra', 'Scorpio',
+                'Sagittarius', 'Capricorn', 'Aquarius', 'Pisces'
+            ]
+            
+            # Get the ascendant sign
             ascendant_sign = ascendant_position['sign']
-            logging.debug(f"Ascendant sign from Kerykeion: '{ascendant_sign}'")
+            logging.warning(f"🔹 DIRECT HOUSE CALCULATION - Ascendant sign: '{ascendant_sign}'")
             
-            # Build houses with the new function designed to guarantee House 1 matches the Ascendant
-            houses = build_houses_from_ascendant(ascendant_sign)
+            # Make sure it's a valid sign, default to Aries if not
+            if ascendant_sign not in zodiac_signs:
+                logging.error(f"🔹 DIRECT HOUSE CALCULATION - Invalid ascendant sign: '{ascendant_sign}', defaulting to Aries")
+                ascendant_sign = 'Aries'
+            
+            # Find the index of the ascendant sign in the zodiac
+            asc_sign_index = zodiac_signs.index(ascendant_sign)
+            logging.warning(f"🔹 DIRECT HOUSE CALCULATION - Ascendant sign index: {asc_sign_index}")
+            
+            # Create the houses array
+            houses = []
+            
+            # Directly build each house
+            for house_num in range(1, 13):
+                # Calculate the sign index for this house
+                house_sign_index = (asc_sign_index + house_num - 1) % 12
+                house_sign = zodiac_signs[house_sign_index]
+                
+                # Create the house object
+                house = {
+                    "house": house_num,
+                    "sign": house_sign,
+                    "system": "Whole Sign"
+                }
+                houses.append(house)
+            
+            # Log the first house to verify
+            logging.warning(f"🔹 DIRECT HOUSE CALCULATION - First house sign: '{houses[0]['sign']}'")
+            logging.warning(f"🔹 DIRECT HOUSE CALCULATION - All houses: {[(h['house'], h['sign']) for h in houses]}")
+            
+            # Final verification
+            if houses[0]['sign'] != ascendant_sign:
+                logging.error(f"🔹 DIRECT HOUSE CALCULATION - CRITICAL ERROR: House 1 sign ({houses[0]['sign']}) doesn't match ascendant ({ascendant_sign})")
+                # Force correct it
+                houses[0]['sign'] = ascendant_sign
             
             # Log house data to debug
             logging.debug(f"HOUSE SYSTEM SELECTED: {house_system}")
@@ -790,9 +832,38 @@ def calculate():
             # Add ascendant interpretation
             ascendant_position['description'] = get_ascendant_interpretation(ascendant_position['sign'])
             
-            # Use our completely new implementation for house calculation
-            from utils.position_interpretations import build_houses_from_ascendant
-            houses = build_houses_from_ascendant(ascendant_position['sign'])
+            logging.warning(f"🔴 MAIN EMERGENCY FALLBACK - Calculating houses directly")
+            
+            # Standard zodiac signs in order
+            zodiac_signs = [
+                'Aries', 'Taurus', 'Gemini', 'Cancer', 
+                'Leo', 'Virgo', 'Libra', 'Scorpio',
+                'Sagittarius', 'Capricorn', 'Aquarius', 'Pisces'
+            ]
+            
+            # Get the ascendant sign from our emergency fallback position
+            ascendant_sign = ascendant_position['sign']
+            logging.warning(f"🔴 MAIN EMERGENCY FALLBACK - Using ascendant sign: '{ascendant_sign}'")
+            
+            # Find the index of the ascendant sign in the zodiac
+            asc_sign_index = zodiac_signs.index(ascendant_sign)
+            
+            # Create the houses array
+            houses = []
+            
+            # Directly build each house
+            for house_num in range(1, 13):
+                # Calculate the sign index for this house
+                house_sign_index = (asc_sign_index + house_num - 1) % 12
+                house_sign = zodiac_signs[house_sign_index]
+                
+                # Create the house object
+                house = {
+                    "house": house_num,
+                    "sign": house_sign,
+                    "system": "Whole Sign (Emergency Fallback)"
+                }
+                houses.append(house)
             
             # Get house meanings
             house_meanings = get_house_meanings()
@@ -1016,15 +1087,57 @@ def view_chart(chart_id):
             # Log calculation details
             logging.debug(f"Ascendant: {ascendant_position['formatted']} (Kerykeion calculation in view_chart)")
             
-            # Use our completely new implementation for house calculation
-            from utils.position_interpretations import build_houses_from_ascendant
+            logging.warning(f"🔶 VIEW CHART - Calculating houses directly inside view_chart")
             
-            # Get the ascendant sign directly from the position data
+            # We will NOT use any external function for house calculation at all
+            # Instead, we'll directly create the houses array right here
+            
+            # Standard zodiac signs in order
+            zodiac_signs = [
+                'Aries', 'Taurus', 'Gemini', 'Cancer', 
+                'Leo', 'Virgo', 'Libra', 'Scorpio',
+                'Sagittarius', 'Capricorn', 'Aquarius', 'Pisces'
+            ]
+            
+            # Get the ascendant sign
             ascendant_sign = ascendant_position['sign']
-            logging.debug(f"View Chart: Ascendant sign from Kerykeion: '{ascendant_sign}'")
+            logging.warning(f"🔶 VIEW CHART - Ascendant sign: '{ascendant_sign}'")
             
-            # Build houses with the new function designed to guarantee House 1 matches the Ascendant
-            houses = build_houses_from_ascendant(ascendant_sign)
+            # Make sure it's a valid sign, default to Aries if not
+            if ascendant_sign not in zodiac_signs:
+                logging.error(f"🔶 VIEW CHART - Invalid ascendant sign: '{ascendant_sign}', defaulting to Aries")
+                ascendant_sign = 'Aries'
+            
+            # Find the index of the ascendant sign in the zodiac
+            asc_sign_index = zodiac_signs.index(ascendant_sign)
+            logging.warning(f"🔶 VIEW CHART - Ascendant sign index: {asc_sign_index}")
+            
+            # Create the houses array
+            houses = []
+            
+            # Directly build each house
+            for house_num in range(1, 13):
+                # Calculate the sign index for this house
+                house_sign_index = (asc_sign_index + house_num - 1) % 12
+                house_sign = zodiac_signs[house_sign_index]
+                
+                # Create the house object
+                house = {
+                    "house": house_num,
+                    "sign": house_sign,
+                    "system": "Whole Sign"
+                }
+                houses.append(house)
+            
+            # Log the first house to verify
+            logging.warning(f"🔶 VIEW CHART - First house sign: '{houses[0]['sign']}'")
+            logging.warning(f"🔶 VIEW CHART - All houses: {[(h['house'], h['sign']) for h in houses]}")
+            
+            # Final verification
+            if houses[0]['sign'] != ascendant_sign:
+                logging.error(f"🔶 VIEW CHART - CRITICAL ERROR: House 1 sign ({houses[0]['sign']}) doesn't match ascendant ({ascendant_sign})")
+                # Force correct it
+                houses[0]['sign'] = ascendant_sign
             
             # Get house meanings
             house_meanings = get_house_meanings()
@@ -1043,9 +1156,38 @@ def view_chart(chart_id):
             ascendant_position = format_position(sidereal_asc)
             logging.warning(f"Using emergency fallback ascendant in view_chart: {ascendant_position['formatted']}")
             
-            # Use our completely new implementation for house calculation even in fallback
-            from utils.position_interpretations import build_houses_from_ascendant
-            houses = build_houses_from_ascendant(ascendant_position['sign'])
+            logging.warning(f"🔴 EMERGENCY FALLBACK - Calculating houses directly")
+            
+            # Standard zodiac signs in order
+            zodiac_signs = [
+                'Aries', 'Taurus', 'Gemini', 'Cancer', 
+                'Leo', 'Virgo', 'Libra', 'Scorpio',
+                'Sagittarius', 'Capricorn', 'Aquarius', 'Pisces'
+            ]
+            
+            # Get the ascendant sign from our emergency fallback position
+            ascendant_sign = ascendant_position['sign']
+            logging.warning(f"🔴 EMERGENCY FALLBACK - Using ascendant sign: '{ascendant_sign}'")
+            
+            # Find the index of the ascendant sign in the zodiac
+            asc_sign_index = zodiac_signs.index(ascendant_sign)
+            
+            # Create the houses array
+            houses = []
+            
+            # Directly build each house
+            for house_num in range(1, 13):
+                # Calculate the sign index for this house
+                house_sign_index = (asc_sign_index + house_num - 1) % 12
+                house_sign = zodiac_signs[house_sign_index]
+                
+                # Create the house object
+                house = {
+                    "house": house_num,
+                    "sign": house_sign,
+                    "system": "Whole Sign (Emergency Fallback)"
+                }
+                houses.append(house)
             
             # Get house meanings
             house_meanings = get_house_meanings()
