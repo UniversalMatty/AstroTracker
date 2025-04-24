@@ -4,6 +4,50 @@ These interpretations provide practical insights on the specific combinations
 of planets in signs rather than general descriptions of planets or signs.
 """
 
+def calculate_simple_houses(ascendant_sign):
+    """
+    Calculate houses based on a simple formula:
+    1. Check the Ascendant Zodiac Sign
+    2. Put the same zodiac sign in the 1st house
+    3. Following houses have following zodiac signs in order
+    
+    Args:
+        ascendant_sign: String with the ascendant's sign name
+        
+    Returns:
+        List of houses with their signs and meanings
+    """
+    # Define zodiac signs
+    zodiac_signs = [
+        'Aries', 'Taurus', 'Gemini', 'Cancer', 
+        'Leo', 'Virgo', 'Libra', 'Scorpio',
+        'Sagittarius', 'Capricorn', 'Aquarius', 'Pisces'
+    ]
+    
+    # Find the index of the ascendant sign
+    try:
+        sign_index = zodiac_signs.index(ascendant_sign)
+    except ValueError:
+        # Default to Aries if sign not found
+        sign_index = 0
+    
+    # Calculate houses
+    houses = []
+    for i in range(12):
+        house_num = i + 1
+        current_sign_index = (sign_index + i) % 12
+        current_sign = zodiac_signs[current_sign_index]
+        
+        # Create house object
+        house = {
+            "house": house_num,
+            "sign": current_sign,
+            "meaning": get_house_meaning(house_num, current_sign)
+        }
+        houses.append(house)
+    
+    return houses
+
 def get_planet_in_sign_interpretation(planet_name, sign_name):
     """
     Get an interpretation for a specific planet in a specific sign.
