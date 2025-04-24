@@ -561,51 +561,51 @@ def calculate():
         ayanamsa = calculate_lahiri_ayanamsa(utc_datetime)
         logging.debug(f"Ayanamsa: {ayanamsa}")
         
-        # Calculate ascendant using Swiss Ephemeris (more accurate)
+        # Use Kerykeion for accurate ascendant and house calculations
         try:
-            logging.debug("About to calculate ascendant using Swiss Ephemeris...")
+            logging.debug("About to calculate ascendant using Kerykeion...")
             
-            # Import Swiss Ephemeris house calculation and formatting functions
-            from utils.swisseph import calculate_houses_and_ascendant, format_longitude_dms
+            # Import Kerykeion calculation function
+            from utils.kerykeion_utils import calculate_kerykeion_chart
             
-            # Calculate using Julian Day from the same time used for planets
-            # This ensures consistency between planet and ascendant calculations
-            houses_and_ascendant = calculate_houses_and_ascendant(jd_ut, latitude, longitude)
+            # Calculate chart using Kerykeion
+            kerykeion_chart = calculate_kerykeion_chart(
+                birth_date=dob_date,
+                birth_time=dob_time,
+                city=city,
+                country=country,
+                latitude=latitude,
+                longitude=longitude
+            )
             
-            # Extract sidereal ascendant directly
-            sidereal_asc = houses_and_ascendant.get('ascendant_longitude', 0.0)
+            # Extract the ascendant
+            ascendant_position = kerykeion_chart['ascendant']
             
-            # Format the position with degrees, minutes, seconds
-            ascendant_sign = houses_and_ascendant.get('ascendant_sign', '')
-            ascendant_degree = houses_and_ascendant.get('ascendant_degree', 0.0)
+            # Log the calculation
+            logging.debug(f"Ascendant: {ascendant_position['formatted']} (Kerykeion calculation)")
             
-            # Convert to DMS format (degrees, minutes, seconds)
-            degree_int = int(ascendant_degree)
-            minutes_float = (ascendant_degree - degree_int) * 60
-            minutes_int = int(minutes_float)
-            seconds_int = int((minutes_float - minutes_int) * 60)
+            # Extract houses from Kerykeion
+            houses = kerykeion_chart['houses']
             
-            formatted_position = f"{ascendant_sign} {degree_int}°{minutes_int}'{seconds_int}\""
+            # Get house meanings
+            house_meanings = get_house_meanings()
             
-            # Create the ascendant position object
-            ascendant_position = {
-                'longitude': sidereal_asc,
-                'sign': ascendant_sign,
-                'degree': ascendant_degree,
-                'formatted': formatted_position
+            # Add meanings to houses
+            for house in houses:
+                house['meaning'] = house_meanings.get(house['house'], '')
+            
+            # Create the house_data structure that the rest of the code expects
+            house_data = {
+                'ascendant': ascendant_position,
+                'houses': houses
             }
             
-            logging.debug(f"Ascendant: {ascendant_position['formatted']} (Swiss Ephemeris calculation)")
-            
-            # Also log the tropical ascendant for debugging
-            tropical_asc = houses_and_ascendant.get('tropical_ascendant', 0.0)
-            actual_ayanamsa = houses_and_ascendant.get('ayanamsa', 0.0)
-            logging.debug(f"Tropical ascendant: {tropical_asc}")
-            logging.debug(f"Ayanamsa used: {actual_ayanamsa}")
-            logging.debug(f"Conversion check: {tropical_asc} - {actual_ayanamsa} = {(tropical_asc - actual_ayanamsa) % 360}")
+            # Check if we want to replace planet calculations from Kerykeion too
+            # If planets were already calculated correctly, we'll keep them
+            # kerykeion_planets = kerykeion_chart['planets']
             
         except Exception as asc_error:
-            logging.error(f"DETAILED Ascendant calculation error: {str(asc_error)}")
+            logging.error(f"DETAILED Ascendant calculation error with Kerykeion: {str(asc_error)}")
             logging.error(f"Error type: {type(asc_error).__name__}")
             logging.error(f"Error traceback: {traceback.format_exc()}")
             
@@ -613,22 +613,22 @@ def calculate():
             sidereal_asc = 0.0  # Aries 0°
             ascendant_position = format_position(sidereal_asc)
             logging.warning(f"Using emergency fallback ascendant: {ascendant_position['formatted']}")
-        
-        # Calculate houses using Whole Sign system with Skyfield
-        houses = calculate_whole_sign_houses(ascendant_position)
-        
-        # Get house meanings
-        house_meanings = get_house_meanings()
-        
-        # Add meanings to houses
-        for house in houses:
-            house['meaning'] = house_meanings.get(house['house'], '')
             
-        # Create the house_data structure that the rest of the code expects
-        house_data = {
-            'ascendant': ascendant_position,
-            'houses': houses
-        }
+            # Calculate houses using Whole Sign system with our original method
+            houses = calculate_whole_sign_houses(ascendant_position)
+            
+            # Get house meanings
+            house_meanings = get_house_meanings()
+            
+            # Add meanings to houses
+            for house in houses:
+                house['meaning'] = house_meanings.get(house['house'], '')
+                
+            # Create the house_data structure that the rest of the code expects
+            house_data = {
+                'ascendant': ascendant_position,
+                'houses': houses
+            }
         
         logging.info(f"Successfully calculated houses using Skyfield - Ascendant: {ascendant_position['formatted']}")
         
@@ -807,55 +807,42 @@ def view_chart(chart_id):
         # Calculate ayanamsa
         ayanamsa = calculate_lahiri_ayanamsa(utc_datetime)
         
-        # Calculate ascendant using Swiss Ephemeris in view_chart for consistency
+        # Calculate ascendant using Kerykeion in view_chart for consistency
         try:
-            logging.debug("About to calculate ascendant in view_chart using Swiss Ephemeris...")
+            logging.debug("About to calculate ascendant in view_chart using Kerykeion...")
             
-            # Import Swiss Ephemeris house calculation and formatting functions
-            from utils.swisseph import calculate_jd_ut, calculate_houses_and_ascendant, format_longitude_dms
+            # Import Kerykeion calculation function
+            from utils.kerykeion_utils import calculate_kerykeion_chart
             
-            # Get Julian Day from birth date and time
+            # Calculate chart using Kerykeion
             birth_date_str = chart.birth_date.strftime('%Y-%m-%d')
-            birth_time_str = chart.birth_time.strftime('%H:%M')
-            jd_ut = calculate_jd_ut(birth_date_str, birth_time_str)
+            birth_time_str = chart.birth_time.strftime('%H:%M') if chart.birth_time else None
             
-            # Calculate ascendant and houses
-            houses_and_ascendant = calculate_houses_and_ascendant(jd_ut, chart.latitude, chart.longitude)
+            kerykeion_chart = calculate_kerykeion_chart(
+                birth_date=birth_date_str,
+                birth_time=birth_time_str,
+                city=chart.city,
+                country=chart.country,
+                latitude=chart.latitude,
+                longitude=chart.longitude
+            )
             
-            # Extract sidereal ascendant
-            sidereal_asc = houses_and_ascendant.get('ascendant_longitude', 0.0)
+            # Extract the ascendant and houses
+            ascendant_position = kerykeion_chart['ascendant']
+            houses = kerykeion_chart['houses']
             
-            # Format the position with degrees, minutes, seconds
-            ascendant_sign = houses_and_ascendant.get('ascendant_sign', '')
-            ascendant_degree = houses_and_ascendant.get('ascendant_degree', 0.0)
+            # Log calculation details
+            logging.debug(f"Ascendant: {ascendant_position['formatted']} (Kerykeion calculation in view_chart)")
             
-            # Convert to DMS format (degrees, minutes, seconds)
-            degree_int = int(ascendant_degree)
-            minutes_float = (ascendant_degree - degree_int) * 60
-            minutes_int = int(minutes_float)
-            seconds_int = int((minutes_float - minutes_int) * 60)
+            # Get house meanings
+            house_meanings = get_house_meanings()
             
-            formatted_position = f"{ascendant_sign} {degree_int}°{minutes_int}'{seconds_int}\""
-            
-            # Create the ascendant position object
-            ascendant_position = {
-                'longitude': sidereal_asc,
-                'sign': ascendant_sign,
-                'degree': ascendant_degree,
-                'formatted': formatted_position
-            }
-            
-            logging.debug(f"Ascendant: {ascendant_position['formatted']} (Swiss Ephemeris calculation)")
-            
-            # Log details for debugging
-            tropical_asc = houses_and_ascendant.get('tropical_ascendant', 0.0)
-            actual_ayanamsa = houses_and_ascendant.get('ayanamsa', 0.0)
-            logging.debug(f"Tropical ascendant: {tropical_asc}")
-            logging.debug(f"Ayanamsa used: {actual_ayanamsa}")
-            logging.debug(f"Conversion check: {tropical_asc} - {actual_ayanamsa} = {(tropical_asc - actual_ayanamsa) % 360}")
-            
+            # Add meanings to houses
+            for house in houses:
+                house['meaning'] = house_meanings.get(house['house'], '')
+                
         except Exception as asc_error:
-            logging.error(f"DETAILED Ascendant calculation error in view_chart: {str(asc_error)}")
+            logging.error(f"DETAILED Ascendant calculation error with Kerykeion in view_chart: {str(asc_error)}")
             logging.error(f"Error type: {type(asc_error).__name__}")
             logging.error(f"Error traceback: {traceback.format_exc()}")
             
@@ -863,17 +850,17 @@ def view_chart(chart_id):
             sidereal_asc = 0.0  # Aries 0°
             ascendant_position = format_position(sidereal_asc)
             logging.warning(f"Using emergency fallback ascendant in view_chart: {ascendant_position['formatted']}")
-        
-        # Calculate houses using Whole Sign system with Skyfield
-        houses = calculate_whole_sign_houses(ascendant_position)
-        
-        # Get house meanings
-        house_meanings = get_house_meanings()
-        
-        # Add meanings to houses
-        for house in houses:
-            house['meaning'] = house_meanings.get(house['house'], '')
             
+            # Calculate houses using Whole Sign system with our original method
+            houses = calculate_whole_sign_houses(ascendant_position)
+            
+            # Get house meanings
+            house_meanings = get_house_meanings()
+            
+            # Add meanings to houses
+            for house in houses:
+                house['meaning'] = house_meanings.get(house['house'], '')
+                
         ascendant = ascendant_position
         
         logging.debug(f"Successfully calculated houses using Skyfield for saved chart - Ascendant: {ascendant_position['formatted']}")
@@ -1068,6 +1055,26 @@ def test_ascendant():
         
         # Add a message about expected results for reference charts
         html += "<h2>Expected Results for Reference Charts</h2>"
+        
+        # Calculate with Kerykeion (new implementation)
+        try:
+            from utils.kerykeion_utils import calculate_kerykeion_chart
+            kerykeion_chart = calculate_kerykeion_chart(
+                birth_date=date_str,
+                birth_time=time_str,
+                city=city,
+                country=country,
+                latitude=latitude,
+                longitude=longitude
+            )
+            
+            kerykeion_asc = kerykeion_chart['ascendant']
+            
+            html += "<h3>Kerykeion Calculation (New Implementation)</h3>"
+            html += f"<p>Ascendant: {kerykeion_asc['formatted']}</p>"
+            html += f"<p>This is our new preferred calculation method</p>"
+        except Exception as ke:
+            html += f"<p>Error with Kerykeion calculation: {str(ke)}</p>"
         
         if damian_data:
             # Display special calibration for Damian
