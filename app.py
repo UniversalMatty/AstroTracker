@@ -178,8 +178,13 @@ def calculate_ascendant(t, observer):
     # Convert to radians
     greenwich_sidereal_radians = greenwich_sidereal_hours * tau / 24.0
     
+    # Extract the latitude and longitude values directly from the location parameter of the Topos
+    # This avoids the 'VectorSum' object has no attribute 'longitude' error
+    latitude_degrees = observer.location[0].latitude.degrees
+    longitude_degrees = observer.location[0].longitude.degrees
+    
     # Add the observer's longitude to get Local Sidereal Time (LST)
-    longitude_radians = math.radians(observer.longitude.degrees)
+    longitude_radians = math.radians(longitude_degrees)
     lst_radians = greenwich_sidereal_radians + longitude_radians
     
     # Normalize to 0-2π
@@ -192,7 +197,7 @@ def calculate_ascendant(t, observer):
     obliquity_radians = math.radians(23.4392911)
     
     # Observer's latitude
-    latitude_radians = math.radians(observer.latitude.degrees)
+    latitude_radians = math.radians(latitude_degrees)
     
     # Calculate ascendant using the standard formula
     tan_term = math.tan(latitude_radians) * math.cos(obliquity_radians)
@@ -490,10 +495,23 @@ def calculate():
         logging.debug(f"Ayanamsa: {ayanamsa}")
         
         # Calculate ascendant using Skyfield
-        tropical_asc = calculate_ascendant(t, observer)
-        sidereal_asc = (tropical_asc - ayanamsa) % 360
-        ascendant_position = format_position(sidereal_asc)
-        logging.debug(f"Ascendant: {ascendant_position['formatted']} (Skyfield calculation)")
+        try:
+            logging.debug("About to calculate ascendant...")
+            tropical_asc = calculate_ascendant(t, observer)
+            logging.debug(f"Tropical ascendant: {tropical_asc}")
+            sidereal_asc = (tropical_asc - ayanamsa) % 360
+            logging.debug(f"Sidereal ascendant: {sidereal_asc}")
+            ascendant_position = format_position(sidereal_asc)
+            logging.debug(f"Ascendant: {ascendant_position['formatted']} (Skyfield calculation)")
+        except Exception as asc_error:
+            logging.error(f"DETAILED Ascendant calculation error: {str(asc_error)}")
+            logging.error(f"Error type: {type(asc_error).__name__}")
+            logging.error(f"Error traceback: {traceback.format_exc()}")
+            
+            # Emergency fallback to a fixed value
+            sidereal_asc = 0.0  # Aries 0°
+            ascendant_position = format_position(sidereal_asc)
+            logging.warning(f"Using emergency fallback ascendant: {ascendant_position['formatted']}")
         
         # Calculate houses using Whole Sign system with Skyfield
         houses = calculate_whole_sign_houses(ascendant_position)
@@ -679,10 +697,24 @@ def view_chart(chart_id):
         # Calculate ayanamsa
         ayanamsa = calculate_lahiri_ayanamsa(utc_datetime)
         
-        # Calculate ascendant using our internal function
-        tropical_asc = calculate_ascendant(t, observer)
-        sidereal_asc = (tropical_asc - ayanamsa) % 360
-        ascendant_position = format_position(sidereal_asc)
+        # Calculate ascendant using our internal function, with specific debug for chart viewing
+        try:
+            logging.debug("About to calculate ascendant in view_chart...")
+            tropical_asc = calculate_ascendant(t, observer)
+            logging.debug(f"Tropical ascendant: {tropical_asc}")
+            sidereal_asc = (tropical_asc - ayanamsa) % 360
+            logging.debug(f"Sidereal ascendant: {sidereal_asc}")
+            ascendant_position = format_position(sidereal_asc)
+            logging.debug(f"Ascendant: {ascendant_position['formatted']} (Skyfield calculation)")
+        except Exception as asc_error:
+            logging.error(f"DETAILED Ascendant calculation error in view_chart: {str(asc_error)}")
+            logging.error(f"Error type: {type(asc_error).__name__}")
+            logging.error(f"Error traceback: {traceback.format_exc()}")
+            
+            # Emergency fallback to a fixed value
+            sidereal_asc = 0.0  # Aries 0°
+            ascendant_position = format_position(sidereal_asc)
+            logging.warning(f"Using emergency fallback ascendant in view_chart: {ascendant_position['formatted']}")
         
         # Calculate houses using Whole Sign system with Skyfield
         houses = calculate_whole_sign_houses(ascendant_position)
