@@ -8,8 +8,9 @@ import json
 
 from utils.geocoding import get_coordinates
 from utils.astronomy import calculate_planet_positions, get_zodiac_sign
-from utils.astrology import get_nakshatra
+from utils.astrology import get_nakshatra, get_house_meanings
 from utils.planet_descriptions import get_planet_description
+from utils.swisseph import calculate_jd_ut, calculate_house_cusps
 from models import db, Chart, PlanetPosition
 
 logging.basicConfig(level=logging.DEBUG)

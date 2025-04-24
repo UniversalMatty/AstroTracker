@@ -140,6 +140,68 @@ def calculate_houses(jd_ut, latitude, longitude, house_system=b'W'):
         logging.error(f"Error calculating houses with Swiss Ephemeris: {str(e)}")
         raise
 
+def calculate_house_cusps(jd_ut, latitude, longitude):
+    """
+    Calculate sidereal house cusps using Swiss Ephemeris with Equal Houses.
+    
+    Parameters:
+    - jd_ut: Julian Day in Universal Time
+    - latitude: Geographic latitude in decimal degrees
+    - longitude: Geographic longitude in decimal degrees
+    
+    Returns a dictionary with:
+    - ascendant: Sidereal ascendant information
+    - houses: List of house cusp information
+    """
+    try:
+        # Always use Equal Houses (b'E') as specified
+        cusps, ascmc = swe.houses_ex(jd_ut, latitude, longitude, b'E', 0)
+        
+        # Get the ascendant (first point in ascmc)
+        tropical_asc = ascmc[0]
+        
+        # Convert to sidereal using Lahiri ayanamsa
+        ayanamsa = calculate_ayanamsa(jd_ut)
+        
+        # Calculate sidereal ascendant
+        sidereal_asc = (tropical_asc - ayanamsa) % 360
+        sidereal_asc_sign = get_zodiac_sign(sidereal_asc)
+        sidereal_asc_degree = sidereal_asc % 30
+        
+        # Format ascendant
+        ascendant = {
+            'longitude': sidereal_asc,
+            'sign': sidereal_asc_sign,
+            'degree': sidereal_asc_degree,
+            'formatted': f"{sidereal_asc_sign} {sidereal_asc_degree:.2f}°"
+        }
+        
+        # Calculate and format house cusps (for Equal Houses)
+        houses = []
+        for i in range(1, 13):  # 12 houses
+            # Convert tropical cusp to sidereal
+            tropical_cusp = cusps[i]
+            sidereal_cusp = (tropical_cusp - ayanamsa) % 360
+            sign = get_zodiac_sign(sidereal_cusp)
+            degree = sidereal_cusp % 30
+            
+            houses.append({
+                'house': i,
+                'longitude': sidereal_cusp,
+                'sign': sign,
+                'degree': degree,
+                'formatted': f"{sign} {degree:.2f}°"
+            })
+        
+        return {
+            'ascendant': ascendant,
+            'houses': houses
+        }
+        
+    except Exception as e:
+        logging.error(f"Error calculating house cusps: {str(e)}")
+        raise
+
 def tropical_to_sidereal(longitude, jd_ut):
     """Convert tropical longitude to sidereal using Krishnamurti ayanamsa"""
     try:
