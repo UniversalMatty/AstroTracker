@@ -18,8 +18,8 @@ try:
     swe.set_ephe_path(EPHE_PATH)
     # Use Swiss Ephemeris files instead of JPL
     swe.SWISSEPH = True
-    # Set the sidereal mode to Krishnamurti ayanamsa 
-    swe.set_sid_mode(swe.SIDM_KRISHNAMURTI)
+    # Set the sidereal mode to Lahiri ayanamsa 
+    swe.set_sid_mode(swe.SIDM_LAHIRI)
     
     logging.info(f"Swiss Ephemeris initialized with path: {EPHE_PATH}")
     logging.info(f"Available .se1 files: {[f for f in os.listdir(EPHE_PATH) if f.endswith('.se1')]}")
@@ -50,28 +50,26 @@ def calculate_jd_ut(date_str, time_str=None):
         raise
 
 def calculate_ayanamsa(jd_ut):
-    """Calculate Krishnamurti ayanamsa for a given Julian Day"""
+    """Calculate Lahiri ayanamsa for a given Julian Day"""
     try:
-        # Krishnamurti ayanamsa is defined with SE_SIDM_KRISHNAMURTI (constant value = 3)
-        # Internally it uses t0 = 2333275.5795 (= January 1, 285) and ayan_t0 = 0°,
-        # which defines the zero point where the tropical and sidereal zodiacs coincided
-        # with the precession rate of 50.288"
-        swe.set_sid_mode(3)  # Using direct constant value for SIDM_KRISHNAMURTI
+        # Set to Lahiri ayanamsa mode (SIDM_LAHIRI = 1)
+        swe.set_sid_mode(swe.SIDM_LAHIRI)
         
         # Get ayanamsa value for the given date
         ayanamsa = swe.get_ayanamsa(jd_ut)
         
         # For verification, calculate ayanamsa using hardcoded values
-        # KP (Krishnamurti) ayanamsa is uniquely defined through a coincidence date of 
-        # 21 March 285 CE, Julian Calendar, at mean noon at Greenwich, as 0.0°
-        # Using a simplified approximation method with reference value from 1900
-        year_1900_jd = 2415021.0  # JD for January 1, 1900
-        jd_diff = jd_ut - year_1900_jd
-        years_since_1900 = jd_diff / 365.25
-        manual_ayanamsa = 22.3736 + (years_since_1900 * 50.288 / 3600)
+        # Lahiri ayanamsa uses 23°15' at January 1, 1950 as the reference point
+        # With a rate of 50.3 seconds per year
+        ref_jd = 2433282.5  # JD for January 1, 1950
+        ref_ayanamsa = 23.15  # 23°15'
+        seconds_per_year = 50.3 / 3600.0  # Convert to degrees
+        days_per_year = 365.25
+        years = (jd_ut - ref_jd) / days_per_year
+        manual_ayanamsa = ref_ayanamsa + (years * seconds_per_year)
         
-        logging.debug(f"KP (Krishnamurti) ayanamsa for JD {jd_ut}: {ayanamsa}")
-        logging.debug(f"Manual approximation of KP ayanamsa: {manual_ayanamsa}")
+        logging.debug(f"Lahiri ayanamsa for JD {jd_ut}: {ayanamsa}")
+        logging.debug(f"Manual approximation of Lahiri ayanamsa: {manual_ayanamsa}")
         
         # In case the swe.get_ayanamsa() fails, return our manual calculation instead
         if ayanamsa < 20 or ayanamsa > 30:  # Sanity check for reasonable values
@@ -80,15 +78,17 @@ def calculate_ayanamsa(jd_ut):
         
         return ayanamsa
     except Exception as e:
-        logging.error(f"Error calculating Krishnamurti ayanamsa: {str(e)}")
+        logging.error(f"Error calculating Lahiri ayanamsa: {str(e)}")
         # Calculate dynamically based on the Julian day
-        # For current date in 2025, this is approximately 24.19°
-        year_1900_jd = 2415021.0  # JD for January 1, 1900
-        jd_diff = jd_ut - year_1900_jd
-        years_since_1900 = jd_diff / 365.25
-        return 22.3736 + (years_since_1900 * 50.288 / 3600)
+        # Using Lahiri reference values
+        ref_jd = 2433282.5  # JD for January 1, 1950
+        ref_ayanamsa = 23.15  # 23°15'
+        seconds_per_year = 50.3 / 3600.0  # Convert to degrees
+        days_per_year = 365.25
+        years = (jd_ut - ref_jd) / days_per_year
+        return ref_ayanamsa + (years * seconds_per_year)
 
-def calculate_houses(jd_ut, latitude, longitude, house_system=b'P'):
+def calculate_houses(jd_ut, latitude, longitude, house_system=b'W'):
     """
     Calculate house cusps and ascendant using Swiss Ephemeris.
     
@@ -96,30 +96,46 @@ def calculate_houses(jd_ut, latitude, longitude, house_system=b'P'):
     - jd_ut: Julian Day in Universal Time
     - latitude: Geographic latitude in decimal degrees
     - longitude: Geographic longitude in decimal degrees
-    - house_system: House system to use. Default is 'P' for Placidus, which gives the most accurate ascendant.
-                    Use 'W' for whole sign houses if needed.
+    - house_system: House system to use. Default is 'W' for Whole Sign houses.
+                    Can also use 'E' for Equal Houses. No other house systems are supported.
     
     Returns a tuple of (houses, ascmc) where:
     - houses: List of house cusps
     - ascmc: List of special points (ascendant, midheaven, etc.)
     """
     try:
-        # Calculate houses - parameters:
+        # Validate house system (only Whole Sign and Equal House are supported)
+        if house_system not in [b'W', b'E']:
+            logging.warning(f"Unsupported house system: {house_system}. Using Whole Sign (W) instead.")
+            house_system = b'W'
+            
+        # Calculate houses using houses_ex for more detailed data
+        # Parameters:
         # jd_ut: Julian day in UT
         # lat: Latitude
         # lon: Longitude
-        # hsys: House system ('P' for Placidus by default, which is more accurate for the ascendant)
-        houses, ascmc = swe.houses(jd_ut, latitude, longitude, house_system)
+        # hsys: House system ('W' for Whole Sign, 'E' for Equal)
+        # flags: 0 for default behavior
+        cusps, ascmc = swe.houses_ex(jd_ut, latitude, longitude, house_system, 0)
         
         # The ascendant is the first element of ascmc
         asc_degree = ascmc[0]
-        asc_sign = get_zodiac_sign(asc_degree)
-        degree_in_sign = asc_degree % 30
+        
+        # First get tropical values
+        tropical_asc_sign = get_zodiac_sign(asc_degree)
+        tropical_degree_in_sign = asc_degree % 30
+        
+        # Convert to sidereal
+        ayanamsa = calculate_ayanamsa(jd_ut)
+        sidereal_asc = (asc_degree - ayanamsa) % 360
+        sidereal_asc_sign = get_zodiac_sign(sidereal_asc)
+        sidereal_degree_in_sign = sidereal_asc % 30
         
         # Log the raw values for debugging
-        logging.debug(f"Swiss Ephemeris ascendant: {degree_in_sign:.2f}° {asc_sign} (tropical)")
+        logging.debug(f"Swiss Ephemeris ascendant (tropical): {tropical_degree_in_sign:.2f}° {tropical_asc_sign}")
+        logging.debug(f"Swiss Ephemeris ascendant (sidereal): {sidereal_degree_in_sign:.2f}° {sidereal_asc_sign}")
         
-        return houses, ascmc
+        return cusps, ascmc
     except Exception as e:
         logging.error(f"Error calculating houses with Swiss Ephemeris: {str(e)}")
         raise
