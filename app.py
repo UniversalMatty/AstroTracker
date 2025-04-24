@@ -539,31 +539,41 @@ def calculate():
         ayanamsa = calculate_lahiri_ayanamsa(utc_datetime)
         logging.debug(f"Ayanamsa: {ayanamsa}")
         
-        # Calculate ascendant using Skyfield (separate from planetary positions)
+        # Calculate ascendant using Swiss Ephemeris (more accurate)
         try:
-            logging.debug("About to calculate ascendant using Skyfield...")
+            logging.debug("About to calculate ascendant using Swiss Ephemeris...")
             
-            # Import Skyfield house calculation function
-            from utils.skyfield_ascendant import calculate_houses_and_ascendant
+            # Import Swiss Ephemeris house calculation function
+            from utils.swisseph import calculate_houses_and_ascendant
             
-            # Get timezone string from coordinates
-            tz_str = get_timezone_from_coordinates(latitude, longitude)
-            
-            # Calculate houses and ascendant using Skyfield
-            houses_and_ascendant = calculate_houses_and_ascendant(date_str, time_str, latitude, longitude, tz_str)
+            # Calculate using Julian Day from the same time used for planets
+            # This ensures consistency between planet and ascendant calculations
+            houses_and_ascendant = calculate_houses_and_ascendant(jd_ut, latitude, longitude)
             
             # Extract sidereal ascendant directly
             sidereal_asc = houses_and_ascendant.get('ascendant_longitude', 0.0)
             
-            # Log the calculation details
-            logging.debug(f"Skyfield sidereal ascendant: {sidereal_asc}")
+            # Format the position with degrees, minutes, seconds
+            ascendant_sign = houses_and_ascendant.get('ascendant_sign', '')
+            ascendant_degree = houses_and_ascendant.get('ascendant_degree', 0.0)
+            
+            # Convert to DMS format (degrees, minutes, seconds)
+            degree_int = int(ascendant_degree)
+            minutes_float = (ascendant_degree - degree_int) * 60
+            minutes_int = int(minutes_float)
+            seconds_int = int((minutes_float - minutes_int) * 60)
+            
+            formatted_position = f"{ascendant_sign} {degree_int}°{minutes_int}'{seconds_int}\""
+            
+            # Create the ascendant position object
             ascendant_position = {
                 'longitude': sidereal_asc,
-                'sign': houses_and_ascendant.get('ascendant_sign', ''),
-                'degree': houses_and_ascendant.get('ascendant_degree', 0.0),
-                'formatted': houses_and_ascendant.get('ascendant_formatted', '')
+                'sign': ascendant_sign,
+                'degree': ascendant_degree,
+                'formatted': formatted_position
             }
-            logging.debug(f"Ascendant: {ascendant_position['formatted']} (Skyfield calculation)")
+            
+            logging.debug(f"Ascendant: {ascendant_position['formatted']} (Swiss Ephemeris calculation)")
             
             # Also log the tropical ascendant for debugging
             tropical_asc = houses_and_ascendant.get('tropical_ascendant', 0.0)
@@ -702,10 +712,22 @@ def view_chart(chart_id):
     # Get planet positions
     planet_positions = PlanetPosition.query.filter_by(chart_id=chart_id).all()
     for position in planet_positions:
+        # Format position in degrees-minutes-seconds format
+        degree_in_sign = position.longitude % 30
+        degree_int = int(degree_in_sign)
+        minutes_float = (degree_in_sign - degree_int) * 60
+        minutes_int = int(minutes_float)
+        seconds_int = int((minutes_float - minutes_int) * 60)
+        
+        # Create formatted DMS string
+        formatted_dms = f"{position.sign} {degree_int}°{minutes_int}'{seconds_int}\""
+        if position.retrograde:
+            formatted_dms += "R"
+            
         planet = {
             'name': position.planet_name,
             'longitude': position.longitude,
-            'formatted_position': f"{position.sign} {position.longitude % 30:.2f}°",
+            'formatted_position': formatted_dms,
             'sign': position.sign,
             'retrograde': position.retrograde
         }
@@ -763,37 +785,45 @@ def view_chart(chart_id):
         # Calculate ayanamsa
         ayanamsa = calculate_lahiri_ayanamsa(utc_datetime)
         
-        # Calculate ascendant using Skyfield in view_chart
+        # Calculate ascendant using Swiss Ephemeris in view_chart for consistency
         try:
-            logging.debug("About to calculate ascendant in view_chart using Skyfield...")
+            logging.debug("About to calculate ascendant in view_chart using Swiss Ephemeris...")
             
-            # Import Skyfield house calculation function
-            from utils.skyfield_ascendant import calculate_houses_and_ascendant
+            # Import Swiss Ephemeris house calculation function
+            from utils.swisseph import calculate_jd_ut, calculate_houses_and_ascendant
             
-            # Get birth date and time strings
+            # Get Julian Day from birth date and time
             birth_date_str = chart.birth_date.strftime('%Y-%m-%d')
             birth_time_str = chart.birth_time.strftime('%H:%M')
+            jd_ut = calculate_jd_ut(birth_date_str, birth_time_str)
             
-            # Calculate houses and ascendant using Skyfield
-            houses_and_ascendant = calculate_houses_and_ascendant(
-                birth_date_str,
-                birth_time_str, 
-                chart.latitude, 
-                chart.longitude, 
-                timezone_str
-            )
+            # Calculate ascendant and houses
+            houses_and_ascendant = calculate_houses_and_ascendant(jd_ut, chart.latitude, chart.longitude)
             
-            # Extract sidereal ascendant directly from Skyfield result
+            # Extract sidereal ascendant
             sidereal_asc = houses_and_ascendant.get('ascendant_longitude', 0.0)
             
-            # Create formatted position object using Skyfield data
+            # Format the position with degrees, minutes, seconds
+            ascendant_sign = houses_and_ascendant.get('ascendant_sign', '')
+            ascendant_degree = houses_and_ascendant.get('ascendant_degree', 0.0)
+            
+            # Convert to DMS format (degrees, minutes, seconds)
+            degree_int = int(ascendant_degree)
+            minutes_float = (ascendant_degree - degree_int) * 60
+            minutes_int = int(minutes_float)
+            seconds_int = int((minutes_float - minutes_int) * 60)
+            
+            formatted_position = f"{ascendant_sign} {degree_int}°{minutes_int}'{seconds_int}\""
+            
+            # Create the ascendant position object
             ascendant_position = {
                 'longitude': sidereal_asc,
-                'sign': houses_and_ascendant.get('ascendant_sign', ''),
-                'degree': houses_and_ascendant.get('ascendant_degree', 0.0),
-                'formatted': houses_and_ascendant.get('ascendant_formatted', '')
+                'sign': ascendant_sign,
+                'degree': ascendant_degree,
+                'formatted': formatted_position
             }
-            logging.debug(f"Ascendant: {ascendant_position['formatted']} (Skyfield calculation)")
+            
+            logging.debug(f"Ascendant: {ascendant_position['formatted']} (Swiss Ephemeris calculation)")
             
             # Log details for debugging
             tropical_asc = houses_and_ascendant.get('tropical_ascendant', 0.0)
