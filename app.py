@@ -241,11 +241,61 @@ def calculate_whole_sign_houses(ascendant_position):
             "house": house_num,
             "sign": current_sign,
             "degree": 0.0,  # In Whole Sign system, houses start at 0° of the sign
-            "formatted": f"{current_sign}"
+            "formatted": f"{current_sign}",
+            "system": "Whole Sign"
         }
         houses.append(house)
     
     return houses
+
+def calculate_equal_houses(ascendant_position):
+    """
+    Calculate house cusps using the Equal House system.
+    In this system, the ascendant becomes the 1st house cusp,
+    and each subsequent house cusp is 30 degrees apart.
+    
+    Args:
+        ascendant_position: Dictionary with ascendant details
+        
+    Returns:
+        List of house dictionaries, each with sign and degree details
+    """
+    houses = []
+    ascendant_longitude = ascendant_position['longitude']
+    
+    for i in range(12):
+        house_num = i + 1
+        house_cusp_longitude = (ascendant_longitude + (i * 30)) % 360
+        house_sign = get_zodiac_sign_from_longitude(house_cusp_longitude)
+        house_degree = house_cusp_longitude % 30
+        
+        house = {
+            "house": house_num,
+            "sign": house_sign,
+            "degree": house_degree,
+            "longitude": house_cusp_longitude,
+            "formatted": f"{house_sign} {house_degree:.2f}°",
+            "system": "Equal Houses"
+        }
+        houses.append(house)
+    
+    return houses
+
+def calculate_houses(ascendant_position, house_system='whole_sign'):
+    """
+    Calculate houses based on the selected system
+    
+    Args:
+        ascendant_position: Dictionary with ascendant details
+        house_system: String indicating which house system to use ('whole_sign' or 'equal')
+        
+    Returns:
+        List of house dictionaries
+    """
+    if house_system.lower() == 'equal':
+        return calculate_equal_houses(ascendant_position)
+    else:
+        return calculate_whole_sign_houses(ascendant_position)
 
 # Configure database
 app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL')
@@ -380,6 +430,7 @@ def calculate():
         dob_time = request.form.get('dob_time')
         country = request.form.get('country')
         city = request.form.get('city')
+        house_system = request.form.get('house_system', 'whole_sign')
         
         # Validate required fields
         if not all([dob_date, country, city]):
@@ -605,6 +656,14 @@ def calculate():
                 'houses': houses
             }
             
+            # Now calculate houses based on the selected house system
+            if house_system.lower() == 'equal':
+                # Replace the houses with Equal Houses
+                houses = calculate_equal_houses(ascendant_position)
+                # Add meanings to houses
+                for house in houses:
+                    house["meaning"] = get_house_meaning(house["house"], house["sign"])
+                
             # Check if we want to replace planet calculations from Kerykeion too
             # If planets were already calculated correctly, we'll keep them
             # kerykeion_planets = kerykeion_chart['planets']
@@ -622,8 +681,11 @@ def calculate():
             # Add ascendant interpretation
             ascendant_position['description'] = get_ascendant_interpretation(ascendant_position['sign'])
             
-            # Calculate houses using Whole Sign system with our original method
-            houses = calculate_whole_sign_houses(ascendant_position)
+            # Calculate houses using selected house system
+            if house_system.lower() == 'equal':
+                houses = calculate_equal_houses(ascendant_position)
+            else:
+                houses = calculate_whole_sign_houses(ascendant_position)
             
             # Get house meanings
             house_meanings = get_house_meanings()
