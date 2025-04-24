@@ -166,17 +166,50 @@ def calculate_ascendant(t, observer):
     Returns:
         Tropical longitude of the ascendant in degrees
     """
-    # Get the celestial equator coordinates of the ecliptic point on the eastern horizon
-    ha, dec, dist = observer.at(t).from_altaz(alt_degrees=0, az_degrees=90)
+    try:
+        # Get the celestial equator coordinates of the ecliptic point on the eastern horizon
+        ha, dec, dist = observer.at(t).from_altaz(alt_degrees=0, az_degrees=90)
+        
+        # Extract the longitude of the ascendant (convert to degrees)
+        asc_lon = (ha.radians * 180 / math.pi + 180) % 360
+        
+        return asc_lon
     
-    # Convert to ecliptic longitude
-    sunpos = earth.at(t).observe(eph['sun']).apparent()
-    ecliptic = sunpos.frame_latlon(t)
-    
-    # Extract the longitude of the ascendant (convert to degrees)
-    asc_lon = (ha.radians * 180 / math.pi + 180) % 360
-    
-    return asc_lon
+    except Exception as e:
+        logging.error(f"Error in calculate_ascendant: {str(e)}")
+        # Use a simpler method as fallback
+        from skyfield.api import Angle
+        from skyfield.almanac import meridian_transits
+        from skyfield.constants import tau
+        
+        # Get RAMC - Right Ascension of the Midheaven
+        # This is a simplified approach that doesn't account for obliquity of the ecliptic
+        greenwich = t.gmst * tau / 24.0  # Greenwich sidereal time in radians
+        local_sidereal_time = greenwich + observer.longitude.radians
+        ramc = local_sidereal_time
+        
+        # Calculate ascendant (approximately)
+        # Using the formula: tan(Asc) = -cos(RAMC) / (sin(RAMC) * cos(obliquity) + tan(latitude) * sin(obliquity))
+        # For simplicity, we'll use a fixed value for the obliquity of the ecliptic
+        obliquity = 23.4392911 * math.pi / 180.0  # Mean obliquity for J2000.0
+        
+        cos_ramc = math.cos(ramc)
+        sin_ramc = math.sin(ramc)
+        cos_obl = math.cos(obliquity)
+        sin_obl = math.sin(obliquity)
+        tan_lat = math.tan(observer.latitude.radians)
+        
+        tan_asc = -cos_ramc / (sin_ramc * cos_obl + tan_lat * sin_obl)
+        asc_rad = math.atan(tan_asc)
+        
+        # Convert to degrees and normalize to 0-360 range
+        asc_deg = (asc_rad * 180.0 / math.pi) % 360
+        
+        # Adjust based on the quadrant of RAMC
+        if (ramc * 180.0 / math.pi) % 360 > 180:
+            asc_deg = (asc_deg + 180) % 360
+            
+        return asc_deg
 
 def calculate_whole_sign_houses(ascendant_position):
     """
