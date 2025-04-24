@@ -392,77 +392,122 @@ def calculate():
         
         # Calculate planetary positions (incl. Rahu and Ketu) using Swiss Ephemeris
         longitude, latitude = coordinates
-        # Skip the problematic planetary calculations altogether for now
-        # and use default placeholder data instead to avoid VectorSum error
-        planets = [
-            {
-                'name': 'Sun',
-                'longitude': 0.0,
-                'sign': 'Aries',
-                'retrograde': False,
-                'formatted_position': 'Aries 0.00°'
-            },
-            {
-                'name': 'Moon',
-                'longitude': 30.0,
-                'sign': 'Taurus',
-                'retrograde': False,
-                'formatted_position': 'Taurus 0.00°'
-            },
-            {
-                'name': 'Mercury',
-                'longitude': 60.0,
-                'sign': 'Gemini',
-                'retrograde': False,
-                'formatted_position': 'Gemini 0.00°'
-            },
-            {
-                'name': 'Venus',
-                'longitude': 90.0,
-                'sign': 'Cancer',
-                'retrograde': False,
-                'formatted_position': 'Cancer 0.00°'
-            },
-            {
-                'name': 'Mars',
-                'longitude': 120.0,
-                'sign': 'Leo',
-                'retrograde': False,
-                'formatted_position': 'Leo 0.00°'
-            },
-            {
-                'name': 'Jupiter',
-                'longitude': 150.0,
-                'sign': 'Virgo',
-                'retrograde': False,
-                'formatted_position': 'Virgo 0.00°'
-            },
-            {
-                'name': 'Saturn',
-                'longitude': 180.0,
-                'sign': 'Libra',
-                'retrograde': False,
-                'formatted_position': 'Libra 0.00°'
-            },
-            {
-                'name': 'Rahu',
-                'longitude': 210.0,
-                'sign': 'Scorpio',
-                'retrograde': True,
-                'formatted_position': 'Scorpio 0.00° (R)'
-            },
-            {
-                'name': 'Ketu',
-                'longitude': 30.0,
-                'sign': 'Taurus',
-                'retrograde': True,
-                'formatted_position': 'Taurus 0.00° (R)'
-            }
-        ]
+        
+        # Get timezone
+        timezone_str = get_timezone_from_coordinates(latitude, longitude)
+        if not timezone_str:
+            timezone_str = "UTC"
+        logging.debug(f"Timezone: {timezone_str}")
+        
+        # Convert local time to UTC for accurate planetary calculations
+        local_datetime_str = f"{dob_date} {dob_time or '12:00'}"
+        local_datetime = datetime.strptime(local_datetime_str, '%Y-%m-%d %H:%M')
+        
+        # Localize the datetime
+        local_tz = pytz.timezone(timezone_str)
+        local_datetime = local_tz.localize(local_datetime)
+        
+        # Convert to UTC
+        utc_datetime = local_datetime.astimezone(pytz.UTC)
+        
+        # Calculate Julian Day for Swiss Ephemeris
+        from utils.swisseph import calculate_jd_ut, calculate_planet_position, calculate_lunar_nodes
+        jd_ut = calculate_jd_ut(dob_date, dob_time or '12:00')
+        logging.debug(f"Julian Day: {jd_ut}")
+        
+        # Dictionary of planets with their Swiss Ephemeris IDs
+        planet_ids = {
+            "Sun": 0,
+            "Moon": 1,
+            "Mercury": 2,
+            "Venus": 3,
+            "Mars": 4,
+            "Jupiter": 5,
+            "Saturn": 6
+        }
+        
+        planets = []
+        
+        # Calculate positions for each planet
+        for planet_name, planet_id in planet_ids.items():
+            try:
+                tropical_longitude, sidereal_longitude, retrograde = calculate_planet_position(planet_id, jd_ut)
+                sign = get_zodiac_sign_from_longitude(sidereal_longitude)
+                degree_in_sign = sidereal_longitude % 30
+                
+                # Format position string
+                formatted_position = f"{sign} {degree_in_sign:.2f}°"
+                if retrograde:
+                    formatted_position += " (R)"
+                
+                planet_data = {
+                    "name": planet_name,
+                    "longitude": sidereal_longitude,
+                    "sign": sign,
+                    "retrograde": retrograde,
+                    "formatted_position": formatted_position
+                }
+                
+                planets.append(planet_data)
+                
+            except Exception as e:
+                logging.error(f"Error calculating position for {planet_name}: {str(e)}")
+                # Add placeholder in case of error
+                planets.append({
+                    "name": planet_name,
+                    "longitude": 0.0,
+                    "sign": "Aries",
+                    "retrograde": False,
+                    "formatted_position": "Aries 0.00° (Error)"
+                })
+        
+        # Calculate Rahu and Ketu
+        try:
+            rahu_longitude, ketu_longitude = calculate_lunar_nodes(jd_ut)
+            
+            # Rahu (North Node)
+            rahu_sign = get_zodiac_sign_from_longitude(rahu_longitude)
+            rahu_degree = rahu_longitude % 30
+            planets.append({
+                "name": "Rahu",
+                "longitude": rahu_longitude,
+                "sign": rahu_sign,
+                "retrograde": True,  # Nodes are always considered retrograde in Vedic astrology
+                "formatted_position": f"{rahu_sign} {rahu_degree:.2f}° (R)"
+            })
+            
+            # Ketu (South Node)
+            ketu_sign = get_zodiac_sign_from_longitude(ketu_longitude)
+            ketu_degree = ketu_longitude % 30
+            planets.append({
+                "name": "Ketu",
+                "longitude": ketu_longitude,
+                "sign": ketu_sign,
+                "retrograde": True,  # Nodes are always considered retrograde in Vedic astrology
+                "formatted_position": f"{ketu_sign} {ketu_degree:.2f}° (R)"
+            })
+            
+        except Exception as e:
+            logging.error(f"Error calculating lunar nodes: {str(e)}")
+            # Add placeholder nodes in case of error
+            planets.append({
+                "name": "Rahu",
+                "longitude": 0.0,
+                "sign": "Aries",
+                "retrograde": True,
+                "formatted_position": "Aries 0.00° (R) (Error)"
+            })
+            planets.append({
+                "name": "Ketu",
+                "longitude": 180.0,
+                "sign": "Libra",
+                "retrograde": True,
+                "formatted_position": "Libra 0.00° (R) (Error)"
+            })
         
         # Add nakshatra information and descriptions to planets
         for planet in planets:
-            planet['nakshatra'] = get_nakshatra(planet['longitude'])
+            planet['nakshatra'] = get_nakshatra_from_longitude(planet['longitude'])
             planet['description'] = get_planet_description(planet['name'])
         
         # Always calculate houses and ascendant using Skyfield for better accuracy
