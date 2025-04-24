@@ -525,6 +525,101 @@ def get_zodiac_sign(longitude):
     sign_index = int(longitude / 30)
     return signs[sign_index % 12]
 
+def format_longitude_dms(longitude):
+    """Format longitude in degrees, minutes, and seconds (DMS)."""
+    # Normalize longitude to 0-360 range
+    longitude = longitude % 360
+    
+    # Determine zodiac sign
+    sign = get_zodiac_sign(longitude)
+    
+    # Calculate degrees, minutes, and seconds within sign
+    degrees_in_sign = longitude % 30
+    degree_int = int(degrees_in_sign)
+    
+    # Calculate minutes
+    minutes_float = (degrees_in_sign - degree_int) * 60
+    minutes_int = int(minutes_float)
+    
+    # Calculate seconds
+    seconds_float = (minutes_float - minutes_int) * 60
+    seconds_int = int(seconds_float)
+    
+    # Format the result: "Sign degrees°minutes'seconds""
+    return f"{sign} {degree_int}°{minutes_int}'{seconds_int}\""
+
+def calculate_houses_and_ascendant(jd_ut, latitude, longitude, house_system=b'W'):
+    """
+    Calculate house cusps and ascendant using Swiss Ephemeris.
+    
+    Parameters:
+        jd_ut: Julian Day in Universal Time
+        latitude: Geographic latitude in decimal degrees
+        longitude: Geographic longitude in decimal degrees
+        house_system: House system to use. Default is 'W' for Whole Sign houses.
+                    Can also use 'E' for Equal Houses, or 'P' for Placidus.
+    
+    Returns a dictionary with:
+    - houses: List of house dictionaries
+    - ascendant_longitude: Sidereal ascendant longitude
+    - tropical_ascendant: Tropical ascendant longitude
+    - ayanamsa: The ayanamsa value used
+    - calculation_method: Description of the calculation method used
+    """
+    try:
+        # Get the houses and ascendant/midheaven from Swiss Ephemeris
+        cusps, ascmc = calculate_houses(jd_ut, latitude, longitude, house_system)
+        
+        # The ascendant is the first element of ascmc
+        tropical_asc = ascmc[0]
+        
+        # Calculate ayanamsa for this Julian Day
+        ayanamsa = calculate_ayanamsa(jd_ut)
+        
+        # Convert tropical ascendant to sidereal
+        sidereal_asc = (tropical_asc - ayanamsa) % 360
+        
+        # Get the sign of the sidereal ascendant
+        sidereal_asc_sign = get_zodiac_sign(sidereal_asc)
+        
+        # Calculate houses in the Whole Sign system (the sign containing the ascendant is the 1st house)
+        houses = []
+        signs = [
+            "Aries", "Taurus", "Gemini", "Cancer", 
+            "Leo", "Virgo", "Libra", "Scorpio", 
+            "Sagittarius", "Capricorn", "Aquarius", "Pisces"
+        ]
+        sign_index = signs.index(sidereal_asc_sign)
+        
+        for i in range(12):
+            house_num = i + 1
+            current_sign_index = (sign_index + i) % 12
+            current_sign = signs[current_sign_index]
+            
+            house = {
+                "house": house_num,
+                "sign": current_sign,
+                "degree": 0.0,  # In Whole Sign system, houses start at 0° of the sign
+                "formatted": f"{current_sign}"
+            }
+            houses.append(house)
+        
+        # Return all the calculation details for maximum transparency
+        return {
+            "houses": houses,
+            "ascendant_longitude": sidereal_asc,
+            "tropical_ascendant": tropical_asc,
+            "ayanamsa": ayanamsa,
+            "ascendant_sign": sidereal_asc_sign,
+            "ascendant_degree": sidereal_asc % 30,
+            "ascendant_formatted": format_longitude_dms(sidereal_asc),
+            "calculation_method": "Swiss Ephemeris (Lahiri Ayanamsa)"
+        }
+        
+    except Exception as e:
+        logging.error(f"Error calculating houses and ascendant: {str(e)}")
+        raise
+
 def get_sign_ruler(sign):
     """
     Get the modern planetary ruler of a zodiac sign.
