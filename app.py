@@ -676,13 +676,16 @@ def calculate():
                 'houses': houses
             }
             
-            # Now calculate houses based on the selected house system
+            # Always calculate houses based on the selected house system
+            # DO NOT use the Kerykeion houses directly
             if house_system.lower() == 'equal':
-                # Replace the houses with Equal Houses
                 houses = calculate_equal_houses(ascendant_position)
-                # Add meanings to houses
-                for house in houses:
-                    house["meaning"] = get_house_meaning(house["house"], house["sign"])
+            else:  # Default to whole_sign
+                houses = calculate_whole_sign_houses(ascendant_position)
+                
+            # Add meanings to houses
+            for house in houses:
+                house["meaning"] = get_house_meaning(house["house"], house["sign"])
                 
             # Check if we want to replace planet calculations from Kerykeion too
             # If planets were already calculated correctly, we'll keep them
@@ -923,12 +926,14 @@ def view_chart(chart_id):
                 longitude=chart.longitude
             )
             
-            # Extract the ascendant and houses
+            # Extract the ascendant from Kerykeion
             ascendant_position = kerykeion_chart['ascendant']
-            houses = kerykeion_chart['houses']
             
             # Log calculation details
             logging.debug(f"Ascendant: {ascendant_position['formatted']} (Kerykeion calculation in view_chart)")
+            
+            # Calculate houses using our own whole_sign implementation
+            houses = calculate_whole_sign_houses(ascendant_position)
             
             # Get house meanings
             house_meanings = get_house_meanings()
