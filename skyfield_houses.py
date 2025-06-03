@@ -10,6 +10,7 @@ import numpy as np
 
 from utils.geocoding import get_coordinates
 from utils.astronomy import calculate_planet_positions
+from utils.utils import get_lahiri_ayanamsa
 
 # Setup logging
 logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
@@ -68,32 +69,7 @@ NAKSHATRAS = [
     {"name": "Revati", "ruling_planet": "Mercury", "end_degree": 360.0}
 ]
 
-def calculate_lahiri_ayanamsa(date):
-    """
-    Calculate the Lahiri ayanamsa for a given date.
-    The Lahiri ayanamsa was approximately 23°15' on Jan 1, 1950,
-    and increases by about 50.3 seconds per year.
-    
-    Args:
-        date: Python datetime object
-        
-    Returns:
-        The Lahiri ayanamsa value in degrees for the given date
-    """
-    # Reference date (January 1, 1950)
-    ref_date = datetime(1950, 1, 1)
-    ref_ayanamsa = 23.15
-    
-    # Ayanamsa increases by about 50.3 seconds per year
-    seconds_per_year = 50.3 / 3600  # Convert to degrees
-    
-    # Calculate years difference
-    days_diff = (date - ref_date).days
-    years_diff = days_diff / 365.25
-    
-    # Calculate current ayanamsa
-    ayanamsa = ref_ayanamsa + (years_diff * seconds_per_year * 365.25)
-    return ayanamsa
+
 
 def get_nakshatra(longitude):
     """Get nakshatra details from sidereal longitude in degrees"""
@@ -303,7 +279,7 @@ def calculate():
         observer = earth + Topos(latitude_degrees=latitude, longitude_degrees=longitude)
         
         # Calculate ayanamsa (Lahiri)
-        ayanamsa = calculate_lahiri_ayanamsa(utc_dt)
+        ayanamsa = get_lahiri_ayanamsa(utc_dt)
         logger.debug(f"Calculated Lahiri ayanamsa: {ayanamsa:.2f}°")
         
         # Calculate ascendant using Skyfield

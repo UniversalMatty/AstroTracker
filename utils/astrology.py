@@ -3,7 +3,8 @@ from datetime import datetime
 import ephem
 import logging
 import swisseph as swe
-from utils.astronomy import degrees_to_dms, get_zodiac_sign, calculate_lahiri_ayanamsa
+from utils.astronomy import degrees_to_dms, get_zodiac_sign
+from utils.utils import get_lahiri_ayanamsa
 from utils.swisseph import calculate_jd_ut, calculate_houses as swe_calculate_houses, get_zodiac_sign as swe_get_zodiac_sign
 
 def calculate_houses(date_str, time_str, longitude, latitude, fixed_ascendant=None):
