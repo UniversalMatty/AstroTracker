@@ -5,6 +5,7 @@ Uses the skyfield library for accurate astronomical calculations.
 import logging
 from datetime import datetime
 import pytz
+from utils.utils import get_lahiri_ayanamsa
 from skyfield.api import load, Topos
 import numpy as np
 from skyfield.constants import ERAD
@@ -58,40 +59,7 @@ def format_longitude_dms(longitude):
     # Format the result: "Sign degrees°minutes'seconds""
     return f"{sign} {degree_int}°{minutes_int}'{seconds_int}\""
 
-def calculate_lahiri_ayanamsa(date):
-    """
-    Calculate the Lahiri ayanamsa for a given date.
-    The Lahiri ayanamsa was approximately 23°15' on Jan 1, 1950,
-    and increases by about 50.3 seconds per year.
-    
-    Args:
-        date: Python datetime object
-        
-    Returns:
-        The Lahiri ayanamsa value in degrees for the given date
-    """
-    try:
-        # Reference: Lahiri ayanamsa was 23.15 degrees on January 1, 1950
-        reference_date = datetime(1950, 1, 1)
-        reference_ayanamsa = 23.15
-        
-        # Calculate years since reference date
-        days_diff = (date - reference_date).days
-        years_diff = days_diff / 365.25
-        
-        # Ayanamsa increases by about 50.3 seconds of arc per year
-        # Convert to degrees: 50.3 seconds = 50.3/3600 degrees
-        increase = years_diff * (50.3 / 3600)
-        
-        # Calculate current ayanamsa
-        ayanamsa = reference_ayanamsa + increase
-        
-        logging.debug(f"Calculated Lahiri ayanamsa for {date.isoformat()}: {ayanamsa:.4f}°")
-        return ayanamsa
-    except Exception as e:
-        logging.error(f"Error calculating Lahiri ayanamsa: {str(e)}")
-        # Return a default value if calculation fails
-        return 23.85
+
 
 def calculate_ascendant(t, observer):
     """
@@ -193,7 +161,7 @@ def calculate_houses_and_ascendant(date_str, time_str, latitude, longitude, time
         tropical_asc = calculate_ascendant(t, observer)
         
         # Calculate the Lahiri ayanamsa for this date
-        ayanamsa = calculate_lahiri_ayanamsa(utc_dt)
+        ayanamsa = get_lahiri_ayanamsa(utc_dt)
         
         # Convert to sidereal (using Lahiri ayanamsa)
         sidereal_asc = (tropical_asc - ayanamsa) % 360

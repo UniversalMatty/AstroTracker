@@ -3,6 +3,7 @@ import math
 from datetime import datetime
 import logging
 from ephemerides_data import get_ephemerides_for_date
+from utils.utils import get_lahiri_ayanamsa
 
 # Planets and their corresponding PyEphem objects
 PLANETS = {
@@ -23,40 +24,7 @@ PLANETS = {
 # The Lahiri ayanamsa increases by approximately 50.3 seconds per year
 AYANAMSA = 23.85  # Default value (will be dynamically calculated)
 
-def calculate_lahiri_ayanamsa(date_str):
-    """
-    Calculate the Lahiri ayanamsa for a given date.
-    The Lahiri ayanamsa was approximately 23°15' on Jan 1, 1950,
-    and increases by about 50.3 seconds per year.
-    
-    Args:
-        date_str: Date string in YYYY-MM-DD format
-        
-    Returns:
-        The Lahiri ayanamsa value in degrees for the given date
-    """
-    try:
-        dt = datetime.strptime(date_str, "%Y-%m-%d")
-        
-        # Reference: Lahiri ayanamsa was 23.15 degrees on January 1, 1950
-        reference_date = datetime(1950, 1, 1)
-        reference_ayanamsa = 23.15
-        
-        # Calculate years since reference date
-        years_diff = (dt - reference_date).days / 365.25
-        
-        # Ayanamsa increases by about 50.3 seconds of arc per year
-        # Convert to degrees: 50.3 seconds = 50.3/3600 degrees
-        increase = years_diff * (50.3 / 3600)
-        
-        # Calculate current ayanamsa
-        ayanamsa = reference_ayanamsa + increase
-        
-        return ayanamsa
-    except Exception as e:
-        logging.error(f"Error calculating Lahiri ayanamsa: {str(e)}")
-        # Return the default value if calculation fails
-        return 23.85  # Default value
+
 
 def degrees_to_dms(degrees):
     """Convert decimal degrees to degrees, minutes, seconds format"""
@@ -286,7 +254,7 @@ def calculate_planet_positions(date_str, time_str, longitude, latitude, ephemeri
         observer.date = dt.strftime("%Y/%m/%d %H:%M:%S")
         
         # Calculate the dynamic Lahiri ayanamsa for the birth date
-        dynamic_ayanamsa = calculate_lahiri_ayanamsa(date_str)
+        dynamic_ayanamsa = get_lahiri_ayanamsa(date_str)
         logging.debug(f"Using dynamic Lahiri ayanamsa: {dynamic_ayanamsa} for date {date_str}")
         
         # Calculate position for each planet

@@ -5,6 +5,7 @@ Uses Kerykeion for accurate ascendant and house calculations.
 import logging
 from datetime import datetime
 from kerykeion import KrInstance
+from utils.utils import get_lahiri_ayanamsa
 
 # Define our own degrees_to_dms function since the module structure has changed
 def degrees_to_dms(degrees):
@@ -15,40 +16,7 @@ def degrees_to_dms(degrees):
     s = int((m_float - m) * 60)
     return d, m, s
 
-def calculate_lahiri_ayanamsa(date):
-    """
-    Calculate the Lahiri ayanamsa for a given date.
-    The Lahiri ayanamsa was approximately 23°15' on Jan 1, 1950,
-    and increases by about 50.3 seconds per year.
-    
-    Args:
-        date: Date components as year, month, day
-        
-    Returns:
-        The Lahiri ayanamsa value in degrees for the given date
-    """
-    year, month, day = date
-    
-    # Reference date: January 1, 1950
-    ref_year = 1950
-    ref_month = 1
-    ref_day = 1
-    ref_ayanamsa = 23.25  # 23°15' in decimal
-    
-    # Calculate years since reference date
-    years_diff = year - ref_year
-    
-    # Adjust for partial year
-    if month < ref_month or (month == ref_month and day < ref_day):
-        years_diff -= 1
-    
-    # Ayanamsa increases by about 50.3 seconds per year (in degrees)
-    seconds_per_year = 50.3 / 3600  # Convert to degrees
-    
-    # Calculate the ayanamsa
-    ayanamsa = ref_ayanamsa + (years_diff * seconds_per_year)
-    
-    return ayanamsa
+
 
 def calculate_kerykeion_chart(birth_date, birth_time, city, country, latitude=None, longitude=None):
     """
@@ -90,7 +58,7 @@ def calculate_kerykeion_chart(birth_date, birth_time, city, country, latitude=No
         )
         
         # Calculate Lahiri ayanamsa for this date
-        ayanamsa = calculate_lahiri_ayanamsa((year, month, day))
+        ayanamsa = get_lahiri_ayanamsa(datetime(year, month, day))
         logging.debug(f"Calculated Lahiri ayanamsa for {year}-{month}-{day}: {ayanamsa}°")
         
         # Extract the tropical ascendant

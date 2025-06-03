@@ -17,7 +17,12 @@ from utils.geocoding import get_coordinates
 from utils.astronomy import calculate_planet_positions, get_zodiac_sign
 from utils.astrology import get_nakshatra, get_house_meanings
 from utils.planet_descriptions import get_planet_description
-from utils.position_interpretations import get_planet_in_sign_interpretation, get_house_meaning, get_ascendant_interpretation
+from utils.position_interpretations import (
+    get_planet_in_sign_interpretation,
+    get_house_meaning,
+    get_ascendant_interpretation,
+)
+from utils.utils import get_lahiri_ayanamsa
 from utils.swisseph import calculate_jd_ut, calculate_house_cusps
 from models import db, Chart, PlanetPosition
 
@@ -80,36 +85,7 @@ NAKSHATRAS = [
     {"name": "Revati", "ruling_planet": "Mercury", "end_degree": 360.0}
 ]
 
-def calculate_lahiri_ayanamsa(date):
-    """
-    Calculate the Lahiri ayanamsa for a given date.
-    The Lahiri ayanamsa was approximately 23°15' on Jan 1, 1950,
-    and increases by about 50.3 seconds per year.
-    
-    Args:
-        date: Python datetime object (can be timezone-aware or naive)
-        
-    Returns:
-        The Lahiri ayanamsa value in degrees for the given date
-    """
-    # Reference date (January 1, 1950)
-    ref_date = datetime(1950, 1, 1)
-    ref_ayanamsa = 23.15
-    
-    # Ayanamsa increases by about 50.3 seconds per year
-    seconds_per_year = 50.3 / 3600  # Convert to degrees
-    
-    # Calculate years difference - handle timezone-aware datetime
-    if date.tzinfo is not None:
-        # If input is timezone-aware, convert reference date to UTC too
-        ref_date = pytz.UTC.localize(ref_date)
-    
-    days_diff = (date - ref_date).days
-    years_diff = days_diff / 365.25
-    
-    # Calculate current ayanamsa
-    ayanamsa = ref_ayanamsa + (years_diff * seconds_per_year * 365.25)
-    return ayanamsa
+
 
 def get_nakshatra_from_longitude(longitude):
     """Get nakshatra details from sidereal longitude in degrees"""
@@ -471,7 +447,7 @@ def calculate_skyfield():
             return jsonify({"error": f"Invalid date or time format: {str(e)}"}), 400
         
         # Calculate ayanamsa
-        ayanamsa = calculate_lahiri_ayanamsa(utc_datetime)
+        ayanamsa = get_lahiri_ayanamsa(utc_datetime)
         logging.debug(f"Ayanamsa: {ayanamsa}")
         
         # Create Skyfield time object
@@ -490,6 +466,21 @@ def calculate_skyfield():
         house_system = data.get('house_system', 'whole_sign')
         # Calculate houses based on selected system
         houses = calculate_houses(ascendant_position, house_system)
+
+        # Calculate planetary positions
+        planets = calculate_planet_positions(birth_date, birth_time, longitude, latitude)
+
+        # Determine planet houses using Whole Sign system
+        asc_index = ZODIAC_SIGNS.index(ascendant_position['sign'])
+        for planet in planets:
+            sign_idx = ZODIAC_SIGNS.index(planet['sign'])
+            planet_house = ((sign_idx - asc_index) % 12) + 1
+            planet['house'] = planet_house
+            planet['interpretation'] = get_planet_in_sign_interpretation(planet['name'], planet['sign'])
+
+        # Add interpretation to each house
+        for h in houses:
+            h['interpretation'] = get_house_meaning(h['house'], h['sign'])
         
         # Create response data
         response_data = {
@@ -504,7 +495,8 @@ def calculate_skyfield():
                 "type": "Lahiri"
             },
             "ascendant": ascendant_position,
-            "houses": houses
+            "houses": houses,
+            "planets": planets
         }
         
         return jsonify(response_data)
@@ -707,7 +699,7 @@ def calculate():
         observer = earth + Topos(latitude_degrees=latitude, longitude_degrees=longitude)
         
         # Calculate ayanamsa
-        ayanamsa = calculate_lahiri_ayanamsa(utc_datetime)
+        ayanamsa = get_lahiri_ayanamsa(utc_datetime)
         logging.debug(f"Ayanamsa: {ayanamsa}")
         
         # Use Kerykeion for accurate ascendant and house calculations
@@ -1055,7 +1047,7 @@ def view_chart(chart_id):
         # dedicated calculate_houses_and_ascendant function from skyfield_ascendant.py
         
         # Calculate ayanamsa
-        ayanamsa = calculate_lahiri_ayanamsa(utc_datetime)
+        ayanamsa = get_lahiri_ayanamsa(utc_datetime)
         
         # Calculate ascendant using Kerykeion in view_chart for consistency
         try:
@@ -1298,19 +1290,11 @@ def test_ascendant():
         # Calculate ayanamsa using different methods
         from utils.swisseph import calculate_ayanamsa
         krishnamurti_ayanamsa = calculate_ayanamsa(jd_ut)
-        
-        # Calculate Lahiri ayanamsa using a custom function
-        def calculate_lahiri_ayanamsa(jd):
-            # Reference date (January 1, 1950)
-            ref_jd = 2433282.5
-            ref_ayanamsa = 23.15
-            # Ayanamsa increases by about 50.3 seconds per year
-            seconds_per_year = 50.3 / 3600  # Convert to degrees
-            days_per_year = 365.25
-            years = (jd - ref_jd) / days_per_year
-            return ref_ayanamsa + (years * seconds_per_year)
-        
-        lahiri_ayanamsa = calculate_lahiri_ayanamsa(jd_ut)
+
+        # Lahiri ayanamsa using common utility
+        lahiri_ayanamsa = get_lahiri_ayanamsa(
+            datetime.strptime(f"{date_str} {time_str}", "%Y-%m-%d %H:%M")
+        )
         
         # Calculate ascendant with different methods
         import swisseph as swe

@@ -1,0 +1,17 @@
+flask>=3.0.3
+flask-sqlalchemy>=3.1.1
+gunicorn>=23.0.0
+pyephem>=9.99
+requests>=2.32.3
+werkzeug>=3.0.6
+psycopg2-binary>=2.9.10
+trafilatura>=2.0.0
+pyswisseph>=2.10.3.2
+timezonefinder>=6.5.9
+pytz>=2025.2
+skyfield>=1.53
+setuptools>=75.3.2
+pandas>=2.0.3
+numpy>=1.24.4
+kerykeion>=3.1.1
+flask-weasyprint>=1.1.0
