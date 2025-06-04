@@ -68,15 +68,6 @@ header .lead {
     font-family: 'Cinzel', serif;
 }
 
-.ascendant-header, .planetary-header {
-    background-color: #f5f5f5 !important;
-    color: var(--bs-primary) !important;
-}
-
-.ascendant-section, .planetary-section {
-    background-color: #f5f5f5;
-    color: #333;
-}
 
 .card-body {
     padding: 1.5rem;
