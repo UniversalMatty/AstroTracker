@@ -14,31 +14,31 @@ def get_planet_description(planet_name):
         A string describing the planet's practical significance in real-world terms
     """
     descriptions = {
-        "Sun": "The Sun represents your core personality traits, confidence level, and natural talents. Its position can indicate your leadership style, how you express authority in professional settings, and the ways you seek recognition. A strong Sun often correlates with clear career direction and the ability to make independent decisions.",
-        
-        "Moon": "The Moon represents your emotional patterns, comfort needs, and instinctive reactions. Its position can indicate how you handle stress, your relationship with family members, and your emotional intelligence. The Moon's influence often appears in your home environment preferences and how you nurture relationships.",
-        
-        "Mercury": "Mercury represents your communication style, learning methods, and decision-making process. Its position can indicate your educational strengths, how you express ideas at work, and your approach to problem-solving. Mercury often manifests in your technological aptitude, writing abilities, and effectiveness in negotiations.",
-        
-        "Venus": "Venus represents your relationship patterns, aesthetic preferences, and financial habits. Its position can indicate your approach to partnerships, spending habits, and design sensibilities. Venus influences your diplomatic skills, taste in art and music, and how you maintain harmony in various social contexts.",
-        
-        "Mars": "Mars represents your energy levels, competitive nature, and action patterns. Its position can indicate your work ethic, exercise preferences, and conflict resolution style. Mars often influences career choices related to leadership, athletics, or technical skills, and can show how you pursue goals and handle challenging situations.",
-        
-        "Jupiter": "Jupiter represents your growth opportunities, educational interests, and optimistic tendencies. Its position can indicate potential career advancements, learning paths that bring success, and how you handle expansion in business. Jupiter often relates to international connections, publishing opportunities, and areas where you might experience financial abundance.",
-        
-        "Saturn": "Saturn represents your discipline, structural needs, and areas requiring persistent effort. Its position can indicate career responsibilities, time management challenges, and long-term planning abilities. Saturn often manifests in professional achievements gained through consistent work, organizational skills, and how you handle authority figures.",
-        
-        "Rahu": "Rahu (North Node) represents unfamiliar growth areas, progressive thinking, and innovative talents. Its position can indicate career fields where you can break new ground, technology adoption patterns, and unconventional relationship approaches. Rahu often correlates with areas where taking calculated risks leads to significant advancement.",
-        
-        "Ketu": "Ketu (South Node) represents inherent skills, areas of natural detachment, and analytical abilities. Its position can indicate technical expertise you may take for granted, research capacities, and situations where you benefit from minimalist approaches. Ketu often relates to specialized knowledge, scientific thinking, and areas where you function well independently.",
-        
-        "Uranus": "Uranus represents your innovative thinking, adaptability to change, and technological aptitude. Its position can indicate which career fields might experience sudden shifts, where you're likely to implement progressive solutions, and your capacity for original thinking. Uranus often influences your approach to digital technologies and collaborative projects.",
-        
-        "Neptune": "Neptune represents your creative imagination, sensitivity to environments, and pattern recognition abilities. Its position can indicate potential in artistic fields, vulnerability to misinformation, and capacity for empathetic leadership. Neptune often manifests in photography skills, music appreciation, and your approach to healthcare and wellness.",
-        
-        "Pluto": "Pluto represents your capacity for in-depth analysis, resource management, and transformative leadership. Its position can indicate areas where you excel at research, power dynamics in professional settings, and psychological insight. Pluto often correlates with investigative abilities, financial strategy, and organizational restructuring skills.",
-        
-        "Ascendant": "The Ascendant represents your natural physical energy patterns, first impression style, and practical approach to new situations. Its position strongly influences your body type, instinctive health habits, and personal presentation. The Ascendant manifests in how you adapt to different social and professional environments and often correlates with your natural strengths in first impressions."
+        "Sun": "The Sun illustrates the seat of personal vitality and purpose. It reveals how you feel seen and how you compensate when insecurity arises. When integrated, it guides confidence and warmth; when wounded, it may seek approval or dominate. This placement highlights the path to authentic self-expression.",
+
+        "Moon": "The Moon describes your emotional memory and instinctive reactions. It shows how you soothe yourself when anxious or cling to habits from childhood. Here we see where you seek safety, sometimes by retreating or over-nurturing. Awareness fosters emotional regulation and healthier attachment.",
+
+        "Mercury": "Mercury governs perception and communication patterns. It maps how you process information and express thoughts under stress. This planet highlights coping styles like overthinking, humor, or avoidance when feeling unheard. Understanding Mercury refines your voice and mental agility.",
+
+        "Venus": "Venus reveals your capacity for love, pleasure, and self-worth. It shows how you attract connection or build walls to avoid hurt. This placement influences financial choices and aesthetic preferences. Working with Venus softens self-judgment and deepens relational harmony.",
+
+        "Mars": "Mars channels your assertive drive and management of anger. It exposes impulses used to defend, compete, or avoid confrontation. When conscious, Mars offers courage and healthy boundaries instead of reckless force. This placement teaches how to pursue desires without harm.",
+
+        "Jupiter": "Jupiter expands your worldview and sense of possibility. It outlines how optimism or excess shapes your growth. Under stress, you may overreach; when balanced, you inspire others and explore new horizons. Jupiter points to experiences that cultivate meaning and generosity.",
+
+        "Saturn": "Saturn symbolizes structure, responsibility, and fear of inadequacy. It shows where you compensate with hard work or withdrawal due to self-criticism. By facing these tests patiently, you build resilience and realistic confidence. Saturn teaches maturity through sustained effort.",
+
+        "Rahu": "Rahu (North Node) depicts yearning for unfamiliar experiences. It can fuel obsession with novelty or status when insecurity bites. Engaged mindfully, Rahu promotes bold experimentation and progressive thinking. This point suggests stepping into discomfort to accelerate growth.",
+
+        "Ketu": "Ketu (South Node) signals ingrained skills and tendencies toward detachment. You may retreat or undervalue these abilities, seeing them as ordinary. Recognizing Ketu helps you access quiet expertise without isolation and invites balance between independence and reliance.",
+
+        "Uranus": "Uranus reflects your urge for freedom and authentic individuality. Sudden changes or rebellious impulses may surface when you feel restricted. Expressed consciously, Uranus inspires innovation and unconventional insight. It teaches adaptability and the courage to break outdated patterns.",
+
+        "Neptune": "Neptune speaks to imagination, spirituality, and sensitivity to collective moods. It may blur boundaries, leading to escapism or idealization when reality feels harsh. Channeled well, Neptune fosters compassion, artistic vision, and subtle perception. This placement encourages discerning inspiration from illusion.",
+
+        "Pluto": "Pluto reveals core desires for transformation and control. It exposes areas where power struggles or deep fears push you toward regeneration. Confronting Pluto's intensity promotes psychological insight and the ability to release outworn attachments. It guides profound healing through facing shadow material.",
+
+        "Ascendant": "The Ascendant describes your instinctive approach to life and the impression you make on others. It reflects coping mechanisms used to protect identity when under pressure. Embracing its qualities allows authentic presence and adaptability. This point sets the tone for your personal journey."
     }
     
     # Return the description if available, otherwise a generic message

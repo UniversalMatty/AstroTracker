@@ -7,6 +7,9 @@
     
     <!-- Bootstrap CSS -->
     <link rel="stylesheet" href="https://cdn.replit.com/agent/bootstrap-agent-dark-theme.min.css">
+
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=Open+Sans:wght@400;600&display=swap" rel="stylesheet">
     
     <!-- Custom CSS -->
     <link rel="stylesheet" href="{{ url_for('static', filename='css/custom.css') }}">
@@ -46,8 +49,8 @@
         
         <!-- Ascendant Section -->
         {% if ascendant %}
-        <div class="card mb-4">
-            <div class="card-header bg-primary text-white">
+        <div class="card mb-4 ascendant-section">
+            <div class="card-header ascendant-header">
                 <div class="d-flex justify-content-between align-items-center">
                     <h3 class="mb-0">Ascendant (Lagna)</h3>
                     <span class="badge bg-info" data-bs-toggle="tooltip" title="Calculated using Skyfield precision astronomical algorithms">
@@ -71,8 +74,8 @@
         {% endif %}
 
         <!-- Planets Section -->
-        <div class="card mb-4">
-            <div class="card-header bg-primary text-white">
+        <div class="card mb-4 planetary-section">
+            <div class="card-header planetary-header">
                 <h3 class="mb-0">Planetary Positions</h3>
             </div>
             <div class="card-body">
@@ -110,36 +113,6 @@
             </div>
         </div>
         
-        <!-- House Cusps Section -->
-        <div class="card mb-4">
-            <div class="card-header bg-secondary text-white">
-                <h3 class="mb-0">House Cusps (Whole Sign System)</h3>
-            </div>
-            <div class="card-body">
-                <p class="mb-4">
-                    Below are the house cusps based on the Whole Sign system, where the sign containing your Ascendant becomes the 1st house,
-                    and each subsequent sign becomes the next house. Each house represents a specific area of life.
-                </p>
-                
-                <div class="row row-cols-1 row-cols-md-3 g-4">
-                    {% for house in houses %}
-                    <div class="col">
-                        <div class="card house-card h-100">
-                            <div class="card-header bg-dark">
-                                House {{ house.house }}: <span class="sign-{{ house.sign.lower() }}">{{ house.sign }}</span>
-                            </div>
-                            <div class="card-body">
-                                <p class="card-text">
-                                    {{ house.meaning }}
-                                </p>
-                            </div>
-                        </div>
-                    </div>
-                    {% endfor %}
-                </div>
-            </div>
-        </div>
-        
         <!-- Planet Descriptions Section -->
         <div class="card mb-4">
             <div class="card-header bg-secondary text-white">
@@ -173,6 +146,36 @@
                                 
                                 <p class="card-text">
                                     {{ planet.description }}
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+
+        <!-- House Cusps Section -->
+        <div class="card mb-4">
+            <div class="card-header bg-secondary text-white">
+                <h3 class="mb-0">House Cusps</h3>
+            </div>
+            <div class="card-body">
+                <p class="mb-4">
+                    Below are the house cusps based on the Whole Sign system, where the sign containing your Ascendant becomes the 1st house,
+                    and each subsequent sign becomes the next house. Each house represents a specific area of life.
+                </p>
+
+                <div class="row row-cols-1 row-cols-md-3 g-4">
+                    {% for house in houses %}
+                    <div class="col">
+                        <div class="card house-card h-100">
+                            <div class="card-header bg-dark">
+                                House {{ house.house }}: <span class="sign-{{ house.sign.lower() }}">{{ house.sign }}</span>
+                            </div>
+                            <div class="card-body">
+                                <p class="card-text">
+                                    {{ house.meaning }}
                                 </p>
                             </div>
                         </div>
