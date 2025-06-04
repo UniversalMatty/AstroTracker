@@ -28,7 +28,10 @@ from utils.geocoding import get_coordinates
 from utils.astronomy import calculate_planet_positions, get_zodiac_sign
 from utils.astrology import get_nakshatra, get_house_meanings
 from utils.planet_descriptions import get_planet_description
-from utils.psych_descriptions import get_planet_sign_description
+from utils.psych_descriptions import (
+    get_planet_sign_description,
+    get_house_sign_description,
+)
 from utils.position_interpretations import (
     get_planet_in_sign_interpretation,
     get_house_meaning,
@@ -526,6 +529,9 @@ def calculate_skyfield():
         # Add interpretation to each house
         for h in houses:
             h["interpretation"] = get_house_meaning(h["house"], h["sign"])
+            h["psychological_description"] = get_house_sign_description(
+                h["house"], h["sign"]
+            )
 
         # Create response data
         response_data = {
@@ -770,7 +776,10 @@ def calculate():
         for i in range(12):
             sign = ZODIAC_SIGNS[(asc_index + i) % 12]
             house = {"house": i+1, "sign": sign, "degree": 0.0, "formatted": f"{sign} 0°"}
-            house["meaning"] = get_house_meaning(i+1, sign)
+            house["meaning"] = get_house_meaning(i + 1, sign)
+            house["psychological_description"] = get_house_sign_description(
+                i + 1, sign
+            )
             houses.append(house)
         house_data = {"ascendant": ascendant_position, "houses": houses}
 
