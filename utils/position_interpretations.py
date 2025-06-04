@@ -399,20 +399,20 @@ def get_house_meaning(house_number, sign_name):
     Returns:
         A string describing practical applications of this house-sign combination
     """
-    # House general meanings - practical life areas
+    # House themes highlighting psychological focus
     house_areas = {
-        1: "Personal approach and physical energy",
-        2: "Financial resources and material security",
-        3: "Communication style and immediate environment",
-        4: "Home environment and family foundations",
-        5: "Creative expression and recreational activities",
-        6: "Work routines and health management",
-        7: "Partnerships and significant relationships",
-        8: "Shared resources and transformative processes",
-        9: "Higher education and broader worldview",
-        10: "Career direction and public reputation",
-        11: "Social networks and long-term goals",
-        12: "Subconscious patterns and private challenges"
+        1: "The 1st house reveals how you shape identity and react when feeling exposed. It shows whether courage or caution colors your self-image.",
+        2: "The 2nd house explores resources and self-worth. It reflects how you chase stability or cling to possessions when insecure.",
+        3: "The 3rd house examines learning style and immediate connections. It indicates whether you share ideas freely or retreat into silence under stress.",
+        4: "The 4th house speaks to emotional roots and family conditioning. It reveals how you nurture yourself and seek safety at home.",
+        5: "The 5th house expresses creativity and personal joy. It shows whether you risk sharing talents or guard them against judgment.",
+        6: "The 6th house addresses daily habits and self-care. It highlights coping strategies for stress and the tension between perfectionism and compassion.",
+        7: "The 7th house reveals patterns in partnership and projection. It exposes how you negotiate autonomy and cooperation in close relationships.",
+        8: "The 8th house delves into intimacy, power, and transformation. It uncovers how you handle vulnerability and profound change.",
+        9: "The 9th house looks at beliefs and expansive journeys. It shows how you seek meaning or cling to dogma when growth feels uncertain.",
+        10: "The 10th house reflects ambition and public standing. It indicates how authority figures shape your drive for purposeful success.",
+        11: "The 11th house explores community ties and future ideals. It shows how you connect with groups and rely on networks for support.",
+        12: "The 12th house uncovers subconscious habits and spiritual longings. It highlights where retreat or escapism can become a coping style."
     }
     
     # Get the base house meaning
@@ -435,9 +435,9 @@ def get_house_meaning(house_number, sign_name):
     }
     
     # Get the sign influence
-    influence = sign_influences.get(sign_name, "unknown influence on")
-    
-    # Combine them into a practical interpretation
-    interpretation = f"Shows a {influence} {base_meaning.lower()}."
+    influence = sign_influences.get(sign_name, "distinct approach to")
+
+    # Combine them into a reflective interpretation
+    interpretation = f"{base_meaning} With {sign_name}, you approach this area in a {influence} way."
     
     return interpretation

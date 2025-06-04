@@ -245,16 +245,16 @@ def get_house_meanings():
     Return a dictionary of house numbers and their astrological meanings.
     """
     return {
-        1: "Self, physical body, personality, appearance, life approach",
-        2: "Possessions, values, money, resources, self-worth",
-        3: "Communication, siblings, short trips, early education, neighbors",
-        4: "Home, family, roots, real estate, emotional foundation",
-        5: "Creativity, romance, children, pleasure, self-expression",
-        6: "Health, daily routines, service, work environment, skills",
-        7: "Partnerships, marriage, contracts, open enemies, relationships",
-        8: "Shared resources, transformation, sexuality, rebirth, others' money",
-        9: "Higher education, philosophy, travel, spirituality, expansion",
-        10: "Career, public reputation, authority, ambition, structure",
-        11: "Friends, groups, hopes, wishes, collective support",
-        12: "Unconscious, hidden strengths/weaknesses, spirituality, isolation"
+        1: "Identity and self-image",
+        2: "Resources and personal values",
+        3: "Learning style and communication",
+        4: "Emotional roots and home life",
+        5: "Creativity, romance and joy",
+        6: "Health habits and daily work",
+        7: "Partnership dynamics",
+        8: "Intimacy and transformation",
+        9: "Beliefs and long journeys",
+        10: "Purpose and public role",
+        11: "Community and aspirations",
+        12: "Inner world and spirituality"
     }
