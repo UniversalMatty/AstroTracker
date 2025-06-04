@@ -1,11 +1,19 @@
 /* Custom styles for the Energetic Blueprint */
 
+:root {
+    --bs-primary: #FFA500;
+}
+
 /* General styling overrides */
 body {
     padding-top: 20px;
     padding-bottom: 40px;
-    background-color: var(--bs-dark);
-    background-image: radial-gradient(circle at 50% 50%, rgba(59, 130, 246, 0.05) 0%, transparent 70%);
+    background-color: #0b0d17;
+    background-image: linear-gradient(rgba(0,0,0,0.7), rgba(0,0,0,0.7)), url('https://images.unsplash.com/photo-1444703686981-a3abbc4d4fe3?auto=format&fit=crop&w=1950&q=80');
+    background-size: cover;
+    background-attachment: fixed;
+    font-family: Helvetica, Arial, sans-serif;
+    color: #ffffff;
     min-height: 100vh;
 }
 
@@ -18,7 +26,7 @@ header h1 {
     font-size: 2.5rem;
     font-weight: 700;
     color: var(--bs-primary);
-    text-shadow: 0 0 10px rgba(59, 130, 246, 0.3);
+    text-shadow: 0 0 10px var(--bs-primary), 0 0 20px var(--bs-primary);
     margin-bottom: 0.5rem;
 }
 
@@ -101,7 +109,7 @@ header .lead {
 .btn-primary {
     background-color: var(--bs-primary);
     border-color: var(--bs-primary);
-    box-shadow: 0 4px 10px rgba(59, 130, 246, 0.3);
+    box-shadow: 0 4px 10px rgba(255, 165, 0, 0.4);
 }
 
 .btn-primary:hover {
@@ -109,7 +117,7 @@ header .lead {
     border-color: var(--bs-primary);
     filter: brightness(1.1);
     transform: translateY(-2px);
-    box-shadow: 0 6px 15px rgba(59, 130, 246, 0.4);
+    box-shadow: 0 6px 15px rgba(255, 165, 0, 0.5);
 }
 
 /* Results page styling */
@@ -226,6 +234,8 @@ header .lead {
     font-weight: 600;
     font-size: 1.1rem;
     padding: 0.75rem 1rem;
+    color: var(--bs-primary);
+    text-shadow: 0 0 5px var(--bs-primary);
 }
 
 /* House styling */

@@ -17,7 +17,9 @@ from utils.geocoding import get_coordinates
 from utils.utils import get_lahiri_ayanamsa
 
 # Setup logging
-logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+logging.basicConfig(
+    level=logging.DEBUG, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+)
 logger = logging.getLogger(__name__)
 
 # Initialize Flask app
@@ -26,7 +28,7 @@ app = Flask(__name__)
 # Load the ephemeris file
 try:
     logger.info("Loading ephemeris file de440s.bsp...")
-    eph = load('de440s.bsp')
+    eph = load("de440s.bsp")
     logger.info("Ephemeris loaded successfully")
 except Exception as e:
     logger.error(f"Error loading ephemeris: {str(e)}")
@@ -34,26 +36,35 @@ except Exception as e:
 
 # Define planets and other objects
 planets = {
-    'Sun': eph['sun'],
-    'Moon': eph['moon'],
-    'Mercury': eph['mercury'],
-    'Venus': eph['venus'],
-    'Mars': eph['mars'],
-    'Jupiter': eph['jupiter barycenter'],
-    'Saturn': eph['saturn barycenter'],
-    'Uranus': eph['uranus barycenter'],
-    'Neptune': eph['neptune barycenter'],
-    'Pluto': eph['pluto barycenter']
+    "Sun": eph["sun"],
+    "Moon": eph["moon"],
+    "Mercury": eph["mercury"],
+    "Venus": eph["venus"],
+    "Mars": eph["mars"],
+    "Jupiter": eph["jupiter barycenter"],
+    "Saturn": eph["saturn barycenter"],
+    "Uranus": eph["uranus barycenter"],
+    "Neptune": eph["neptune barycenter"],
+    "Pluto": eph["pluto barycenter"],
 }
 
-earth = eph['earth']
+earth = eph["earth"]
 ts = load.timescale()
 
 # Zodiac signs and nakshatras
 ZODIAC_SIGNS = [
-    "Aries", "Taurus", "Gemini", "Cancer", 
-    "Leo", "Virgo", "Libra", "Scorpio", 
-    "Sagittarius", "Capricorn", "Aquarius", "Pisces"
+    "Aries",
+    "Taurus",
+    "Gemini",
+    "Cancer",
+    "Leo",
+    "Virgo",
+    "Libra",
+    "Scorpio",
+    "Sagittarius",
+    "Capricorn",
+    "Aquarius",
+    "Pisces",
 ]
 
 NAKSHATRAS = [
@@ -83,29 +94,34 @@ NAKSHATRAS = [
     {"name": "Shatabhisha", "ruling_planet": "Rahu", "end_degree": 320.0},
     {"name": "Purva Bhadrapada", "ruling_planet": "Jupiter", "end_degree": 333.33333},
     {"name": "Uttara Bhadrapada", "ruling_planet": "Saturn", "end_degree": 346.66666},
-    {"name": "Revati", "ruling_planet": "Mercury", "end_degree": 360.0}
+    {"name": "Revati", "ruling_planet": "Mercury", "end_degree": 360.0},
 ]
-
 
 
 def get_nakshatra(longitude):
     """Get nakshatra details from sidereal longitude in degrees"""
     for i, nakshatra in enumerate(NAKSHATRAS):
         if longitude < nakshatra["end_degree"]:
-            start_degree = 0 if i == 0 else NAKSHATRAS[i-1]["end_degree"]
-            position_in_nakshatra = (longitude - start_degree) / (nakshatra["end_degree"] - start_degree) * 100
+            start_degree = 0 if i == 0 else NAKSHATRAS[i - 1]["end_degree"]
+            position_in_nakshatra = (
+                (longitude - start_degree)
+                / (nakshatra["end_degree"] - start_degree)
+                * 100
+            )
             return {
                 "name": nakshatra["name"],
                 "ruling_planet": nakshatra["ruling_planet"],
-                "position": f"{position_in_nakshatra:.1f}%"
+                "position": f"{position_in_nakshatra:.1f}%",
             }
     # Handle edge case (should not happen with proper input)
     return NAKSHATRAS[0]
+
 
 def get_zodiac_sign(longitude):
     """Get zodiac sign from longitude in degrees (0-360)"""
     sign_index = int(longitude / 30)
     return ZODIAC_SIGNS[sign_index % 12]
+
 
 def format_position(longitude, retrograde=False):
     """Format position with zodiac sign and degree"""
@@ -119,30 +135,32 @@ def format_position(longitude, retrograde=False):
         "degree": degree,
         "formatted": f"{degree:.2f}° {sign}{r_symbol}",
         "nakshatra": nakshatra,
-        "full_description": f"{degree:.2f}° {sign} – {nakshatra['name']} ({nakshatra['ruling_planet']}){r_symbol}"
+        "full_description": f"{degree:.2f}° {sign} – {nakshatra['name']} ({nakshatra['ruling_planet']}){r_symbol}",
     }
+
 
 def local_to_utc(date_str, time_str, timezone_str):
     """Convert local time to UTC using pytz."""
     try:
         # Parse date and time strings
         local_dt_str = f"{date_str} {time_str}"
-        local_dt = datetime.strptime(local_dt_str, '%Y-%m-%d %H:%M')
-        
+        local_dt = datetime.strptime(local_dt_str, "%Y-%m-%d %H:%M")
+
         # Get timezone
         local_tz = pytz.timezone(timezone_str)
-        
+
         # Localize the datetime (add timezone info)
         local_dt = local_tz.localize(local_dt)
-        
+
         # Convert to UTC
         utc_dt = local_dt.astimezone(pytz.UTC)
-        
+
         logger.debug(f"Converted {local_dt} ({timezone_str}) to UTC: {utc_dt}")
         return utc_dt
     except Exception as e:
         logger.error(f"Error converting time to UTC: {str(e)}")
         raise
+
 
 def get_timezone_from_coordinates(latitude, longitude):
     """Get timezone string from coordinates using timezonefinder."""
@@ -150,57 +168,63 @@ def get_timezone_from_coordinates(latitude, longitude):
         tf = TimezoneFinder()
         timezone_str = tf.timezone_at(lat=latitude, lng=longitude)
         if timezone_str is None:
-            logger.warning(f"Could not find timezone for coordinates ({latitude}, {longitude}). Using UTC.")
+            logger.warning(
+                f"Could not find timezone for coordinates ({latitude}, {longitude}). Using UTC."
+            )
             return "UTC"
-        logger.debug(f"Found timezone {timezone_str} for coordinates ({latitude}, {longitude})")
+        logger.debug(
+            f"Found timezone {timezone_str} for coordinates ({latitude}, {longitude})"
+        )
         return timezone_str
     except Exception as e:
         logger.error(f"Error finding timezone: {str(e)}")
         return "UTC"  # Fallback to UTC
 
+
 def calculate_ascendant(t, observer):
     """
     Calculate the ascendant (rising sign) using Skyfield.
-    
+
     Args:
         t: Skyfield Time object
         observer: Skyfield Topos object for the observer's location
-        
+
     Returns:
         Tropical longitude of the ascendant in degrees
     """
     try:
         # Get sidereal time at Greenwich
         gst = t.gast * 15  # Convert hours to degrees
-        
+
         # Adjust for observer's longitude to get local sidereal time (LST)
         lst = (gst + observer.longitude.degrees) % 360
-        
+
         # The tropical ascendant is the point of the ecliptic that is rising
         # This is a simplified calculation that works well for most locations
         latitude_rad = math.radians(observer.latitude.degrees)
-        
+
         # Calculate obliquity of the ecliptic
         # This is a simplified formula good for current epoch
         epsilon = math.radians(23.44)  # Obliquity in radians
-        
+
         # Calculate ascendant
-        tan_asc = (math.cos(math.radians(lst)) / 
-                   (math.sin(math.radians(lst)) * math.cos(epsilon) - 
-                    math.tan(latitude_rad) * math.sin(epsilon)))
-        
+        tan_asc = math.cos(math.radians(lst)) / (
+            math.sin(math.radians(lst)) * math.cos(epsilon)
+            - math.tan(latitude_rad) * math.sin(epsilon)
+        )
+
         ascendant_rad = math.atan(tan_asc)
-        
+
         # Convert to degrees and ensure it's in the correct quadrant
         ascendant_deg = math.degrees(ascendant_rad)
-        
+
         # Adjust quadrant based on LST
         if 90 <= lst < 270:
             ascendant_deg += 180
-        
+
         # Ensure the result is between 0 and 360
         ascendant_deg = (ascendant_deg + 360) % 360
-        
+
         logger.debug(f"Calculated tropical ascendant: {ascendant_deg:.2f}°")
         return ascendant_deg
     except Exception as e:
@@ -208,134 +232,139 @@ def calculate_ascendant(t, observer):
         # Return a default value in case of error
         return 0.0
 
+
 def calculate_ecliptic_longitude(planet, t, observer):
     """
     Calculate the ecliptic longitude of a planet at a specific time.
-    
+
     Args:
         planet: Skyfield planet/body object
         t: Skyfield Time object
         observer: Skyfield Topos object for the observer's location
-        
+
     Returns:
         Tropical longitude in degrees
     """
     try:
         # Calculate geocentric position (from Earth's center)
-        if planet == planets['Moon']:
+        if planet == planets["Moon"]:
             # For the Moon, use geocentric position
             pos = earth.at(t).observe(planet)
         else:
             # For other planets, use topocentric position (from observer's location)
             pos = observer.at(t).observe(planet)
-        
+
         # Transform to ecliptic coordinates
         ecliptic = pos.frame_latlon(ecliptic_frame)
-        
+
         # Extract longitude and convert to degrees
         longitude = ecliptic[1].degrees
-        
+
         # Calculate speed for retrograde detection (if available)
         try:
             # Get position slightly before and after to calculate speed
             t_before = ts.tt(jd=t.tt - 1)  # 1 day before
-            t_after = ts.tt(jd=t.tt + 1)   # 1 day after
-            
-            if planet == planets['Moon']:
+            t_after = ts.tt(jd=t.tt + 1)  # 1 day after
+
+            if planet == planets["Moon"]:
                 pos_before = earth.at(t_before).observe(planet)
                 pos_after = earth.at(t_after).observe(planet)
             else:
                 pos_before = observer.at(t_before).observe(planet)
                 pos_after = observer.at(t_after).observe(planet)
-                
+
             ecliptic_before = pos_before.frame_latlon(ecliptic_frame)
             ecliptic_after = pos_after.frame_latlon(ecliptic_frame)
-            
+
             long_before = ecliptic_before[1].degrees
             long_after = ecliptic_after[1].degrees
-            
+
             # Handle cases where longitude crosses 0/360 boundary
             if abs(long_after - long_before) > 180:
                 if long_after < long_before:
                     long_after += 360
                 else:
                     long_before += 360
-                    
+
             # Daily rate of change (degrees per day)
             daily_rate = (long_after - long_before) / 2.0
-            
+
             # Planet is retrograde if daily rate is negative
             retrograde = daily_rate < 0
         except Exception as e:
             logger.warning(f"Could not determine retrograde status: {str(e)}")
             retrograde = False
-        
+
         return longitude, retrograde
     except Exception as e:
         logger.error(f"Error calculating planetary position: {str(e)}")
         return 0.0, False
 
+
 def calculate_nodes(t, observer):
     """
     Calculate the positions of the lunar nodes (Rahu and Ketu).
     This is a simplified calculation based on the Moon's orbit.
-    
+
     Args:
         t: Skyfield Time object
         observer: Skyfield Topos object for the observer's location
-        
+
     Returns:
         Tuple of (rahu_longitude, ketu_longitude) in tropical degrees
     """
     try:
         # The lunar nodes are the points where the Moon's orbit intersects the ecliptic
         # For a simplified approach, we can use the Moon's position and velocity
-        moon = planets['Moon']
-        sun = planets['Sun']
-        
+        moon = planets["Moon"]
+        sun = planets["Sun"]
+
         # Get geocentric position of Moon
         moon_gcentric = earth.at(t).observe(moon)
-        
+
         # Get ecliptic coordinates
         moon_ecliptic = moon_gcentric.frame_latlon(ecliptic_frame)
-        
+
         # The ascending node (Rahu) is approximately 90° away from the point
         # where the Moon's latitude is zero and changing from south to north
-        
+
         # For a quick approximation, we'll use a value that's updated periodically
         # This is not as accurate as a full calculation but sufficient for many purposes
-        
+
         # The mean longitude of the ascending node has a period of about 18.6 years
         # and can be approximated with a formula
-        
+
         # Get the Julian date
         jd = t.tt
-        
+
         # Calculate mean longitude of ascending node (simplified formula)
         # Based on Astronomical Almanac formula
         T = (jd - 2451545.0) / 36525.0  # Julian centuries since J2000.0
-        
+
         # Mean longitude of the ascending node
         omega = 125.04452 - 1934.136261 * T + 0.0020708 * T**2 + T**3 / 450000.0
-        
+
         # Ensure result is between 0 and 360 degrees
         rahu_longitude = omega % 360
-        
+
         # Ketu is always 180° opposite to Rahu
         ketu_longitude = (rahu_longitude + 180) % 360
-        
-        logger.debug(f"Calculated tropical Rahu: {rahu_longitude:.2f}°, Ketu: {ketu_longitude:.2f}°")
+
+        logger.debug(
+            f"Calculated tropical Rahu: {rahu_longitude:.2f}°, Ketu: {ketu_longitude:.2f}°"
+        )
         return rahu_longitude, ketu_longitude
     except Exception as e:
         logger.error(f"Error calculating lunar nodes: {str(e)}")
         # Return default values in case of error
         return 0.0, 180.0
 
-@app.route('/calculate', methods=['POST'])
+
+@app.route("/calculate", methods=["POST"])
 def calculate():
     """
     Calculate planetary positions and ascendant for a given birth details.
-    
+
     Expected JSON input:
     {
         "birth_date": "YYYY-MM-DD",
@@ -347,85 +376,96 @@ def calculate():
     try:
         # Get JSON data from request
         data = request.json
-        
+
         # Validate required fields
-        required_fields = ['birth_date', 'city', 'country']
+        required_fields = ["birth_date", "city", "country"]
         if not all(field in data for field in required_fields):
             return jsonify({"error": "Missing required fields"}), 400
-        
+
         # Extract fields
-        birth_date = data['birth_date']
-        birth_time = data.get('birth_time', '12:00')  # Default to noon if not provided
-        city = data['city']
-        country = data['country']
-        
-        logger.debug(f"Received request for birth_date={birth_date}, birth_time={birth_time}, city={city}, country={country}")
-        
+        birth_date = data["birth_date"]
+        birth_time = data.get("birth_time", "12:00")  # Default to noon if not provided
+        city = data["city"]
+        country = data["country"]
+
+        logger.debug(
+            f"Received request for birth_date={birth_date}, birth_time={birth_time}, city={city}, country={country}"
+        )
+
         # Get coordinates
-        coordinates = get_coordinates(city, country)
+        location_str = f"{city}, {country}"
+        coordinates = get_coordinates(location_str)
         if not coordinates:
-            return jsonify({"error": f"Could not determine coordinates for {city}, {country}"}), 400
-        
+            logger.error("Geocoding failed for input: %s", location_str)
+            return (
+                jsonify(
+                    {"error": "Could not determine coordinates for the given location"}
+                ),
+                400,
+            )
+
         longitude, latitude = coordinates
-        logger.debug(f"Geocoded {city}, {country} to coordinates: ({latitude}, {longitude})")
-        
+        logger.debug(
+            f"Geocoded {city}, {country} to coordinates: ({latitude}, {longitude})"
+        )
+
         # Get timezone
         timezone_str = get_timezone_from_coordinates(latitude, longitude)
-        
+
         # Convert local time to UTC
         utc_dt = local_to_utc(birth_date, birth_time, timezone_str)
-        
+
         # Create Skyfield time object
         t = ts.from_datetime(utc_dt)
-        
+
         # Create observer object
         observer = earth + Topos(latitude_degrees=latitude, longitude_degrees=longitude)
-        
+
         # Calculate ayanamsa (Lahiri)
         ayanamsa = get_lahiri_ayanamsa(utc_dt)
         logger.debug(f"Calculated Lahiri ayanamsa: {ayanamsa:.2f}°")
-        
+
         # Calculate ascendant
         tropical_asc = calculate_ascendant(t, observer)
         sidereal_asc = (tropical_asc - ayanamsa) % 360
         ascendant = format_position(sidereal_asc)
-        
+
         # Calculate planetary positions
         planet_positions = {}
         for planet_name, planet in planets.items():
-            tropical_long, retrograde = calculate_ecliptic_longitude(planet, t, observer)
+            tropical_long, retrograde = calculate_ecliptic_longitude(
+                planet, t, observer
+            )
             sidereal_long = (tropical_long - ayanamsa) % 360
             planet_positions[planet_name] = format_position(sidereal_long, retrograde)
-        
+
         # Calculate lunar nodes
         rahu_tropical, ketu_tropical = calculate_nodes(t, observer)
         rahu_sidereal = (rahu_tropical - ayanamsa) % 360
         ketu_sidereal = (ketu_tropical - ayanamsa) % 360
-        
-        planet_positions['Rahu'] = format_position(rahu_sidereal)
-        planet_positions['Ketu'] = format_position(ketu_sidereal)
-        
+
+        planet_positions["Rahu"] = format_position(rahu_sidereal)
+        planet_positions["Ketu"] = format_position(ketu_sidereal)
+
         # Format response
         response = {
             "birth_details": {
                 "date": birth_date,
                 "time": birth_time,
                 "location": f"{city}, {country}",
-                "coordinates": {"latitude": latitude, "longitude": longitude}
+                "coordinates": {"latitude": latitude, "longitude": longitude},
             },
-            "ayanamsa": {
-                "type": "Lahiri",
-                "value": f"{ayanamsa:.2f}°"
-            },
+            "ayanamsa": {"type": "Lahiri", "value": f"{ayanamsa:.2f}°"},
             "ascendant": ascendant,
-            "planets": planet_positions
+            "planets": planet_positions,
         }
-        
+
         return jsonify(response)
-    
+
     except Exception as e:
         logger.error(f"Error processing request: {str(e)}")
         return jsonify({"error": str(e)}), 500
+
 
 # Calculate houses in the Whole Sign system
 def calculate_whole_sign_houses(ascendant_position):
@@ -433,42 +473,48 @@ def calculate_whole_sign_houses(ascendant_position):
     Calculate house cusps using the Whole Sign system.
     In this system, the sign containing the ascendant becomes the 1st house,
     and each subsequent sign becomes the next house.
-    
+
     Args:
         ascendant_position: Dictionary with ascendant details
-        
+
     Returns:
         List of house dictionaries, each with sign and other details
     """
     try:
         # Get the sign of the ascendant
-        asc_sign = ascendant_position['sign']
+        asc_sign = ascendant_position["sign"]
         asc_sign_num = ZODIAC_SIGNS.index(asc_sign)
-        
+
         houses = []
         for i in range(1, 13):  # 12 houses
             # Each house is an entire sign
             house_sign_num = (asc_sign_num + i - 1) % 12
             house_sign = ZODIAC_SIGNS[house_sign_num]
-            
-            houses.append({
-                'house': i,
-                'sign': house_sign,
-                'degree': 0.0,  # Whole sign houses start at 0° of the sign
-                'formatted': f"{house_sign} 0.00°"
-            })
-            
+
+            houses.append(
+                {
+                    "house": i,
+                    "sign": house_sign,
+                    "degree": 0.0,  # Whole sign houses start at 0° of the sign
+                    "formatted": f"{house_sign} 0.00°",
+                }
+            )
+
         return houses
     except Exception as e:
         logger.error(f"Error calculating whole sign houses: {str(e)}")
         # Return a basic template in case of error
-        return [{'house': i, 'sign': 'Unknown', 'degree': 0.0, 'formatted': 'Unknown 0.00°'} for i in range(1, 13)]
+        return [
+            {"house": i, "sign": "Unknown", "degree": 0.0, "formatted": "Unknown 0.00°"}
+            for i in range(1, 13)
+        ]
 
-@app.route('/calculate_chart', methods=['POST'])
+
+@app.route("/calculate_chart", methods=["POST"])
 def calculate_chart():
     """
     Calculate a complete astrological chart including houses.
-    
+
     Expected JSON input:
     {
         "birth_date": "YYYY-MM-DD",
@@ -483,21 +529,22 @@ def calculate_chart():
         if isinstance(result, tuple):
             # If we got an error response, return it
             return result
-        
+
         # Extract the data from the calculation result
         data = result.json
-        
+
         # Calculate houses using Whole Sign system
-        houses = calculate_whole_sign_houses(data['ascendant'])
-        
+        houses = calculate_whole_sign_houses(data["ascendant"])
+
         # Add houses to the response
-        data['houses'] = houses
-        
+        data["houses"] = houses
+
         return jsonify(data)
-    
+
     except Exception as e:
         logger.error(f"Error calculating chart: {str(e)}")
         return jsonify({"error": str(e)}), 500
 
-if __name__ == '__main__':
-    app.run(debug=True, host='0.0.0.0', port=5000)
+
+if __name__ == "__main__":
+    app.run(debug=True, host="0.0.0.0", port=5000)

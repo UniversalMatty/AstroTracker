@@ -1,46 +1,38 @@
-import requests
 import logging
 import os
 
-def get_coordinates(city, country):
+from geopy.geocoders import Nominatim
+from geopy.exc import GeocoderServiceError
+
+
+def get_coordinates(location: str):
+    """Return (longitude, latitude) for the given location string.
+
+    Parameters
+    ----------
+    location: str
+        Location string including both city and country, e.g. ``"Warsaw, Poland"``.
+        Frontend users should pass both city and country for best accuracy.
     """
-    Get latitude and longitude for a given city and country using OpenCage Geocoding API.
-    Returns a tuple of (longitude, latitude) or None if the coordinates couldn't be determined.
-    """
+
+    user_agent = os.getenv("GEOPY_USER_AGENT", "astrotracker_app")
+    geolocator = Nominatim(user_agent=user_agent)
+
     try:
-        # Get API key from environment variable
-        api_key = os.getenv("OPENCAGE_KEY")
-        if not api_key:
-            logging.error("OPENCAGE_KEY environment variable not set")
-            return None
-            
-        # Construct the query
-        query = f"{city}, {country}"
-        
-        # Using OpenCage API for geocoding
-        url = "https://api.opencagedata.com/geocode/v1/json"
-        
-        params = {
-            "q": query,
-            "key": api_key,
-            "limit": 1,
-            "no_annotations": 1
-        }
-        
-        response = requests.get(url, params=params)
-        response.raise_for_status()
-        
-        data = response.json()
-        if data and data['results'] and len(data['results']) > 0:
-            result = data['results'][0]
-            latitude = float(result['geometry']['lat'])
-            longitude = float(result['geometry']['lng'])
-            logging.debug(f"Found coordinates for {query}: {longitude}, {latitude}")
+        result = geolocator.geocode(location)
+        if result:
+            latitude = float(result.latitude)
+            longitude = float(result.longitude)
+            logging.debug(
+                "Found coordinates for %s: %s, %s", location, longitude, latitude
+            )
             return (longitude, latitude)
         else:
-            logging.warning(f"No coordinates found for {query}")
+            logging.warning("No coordinates found for location input: %s", location)
             return None
-            
-    except Exception as e:
-        logging.error(f"Error getting coordinates: {str(e)}")
+    except GeocoderServiceError as exc:
+        logging.error("Geocoder service error for '%s': %s", location, exc)
+        return None
+    except Exception as exc:  # pragma: no cover - unexpected errors
+        logging.error("Error getting coordinates for '%s': %s", location, exc)
         return None
