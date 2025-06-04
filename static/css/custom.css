@@ -30,7 +30,6 @@ header h1 {
     font-weight: 700;
     font-family: 'Cinzel', serif;
     color: var(--bs-primary);
-    text-shadow: 0 0 10px var(--bs-primary), 0 0 20px var(--bs-primary);
     margin-bottom: 0.5rem;
 }
 
@@ -68,6 +67,14 @@ header .lead {
     font-family: 'Cinzel', serif;
 }
 
+/* Custom header for the Birth Details card */
+.birth-header {
+    background-color: #444 !important;
+    border-bottom: 2px solid rgba(255, 255, 255, 0.1);
+    box-shadow: none;
+    text-shadow: none;
+}
+
 
 .card-body {
     padding: 1.5rem;
@@ -96,9 +103,9 @@ header .lead {
 }
 
 .form-control:focus {
-    background-color: rgba(255, 165, 0, 0.1);
+    background-color: rgba(33, 37, 41, 0.9);
     border-color: var(--bs-primary);
-    box-shadow: 0 0 0 0.25rem rgba(255, 165, 0, 0.25);
+    box-shadow: none;
 }
 
 .form-label {
@@ -119,15 +126,15 @@ header .lead {
 .btn-primary {
     background-color: var(--bs-primary);
     border-color: var(--bs-primary);
-    box-shadow: 0 4px 10px rgba(255, 165, 0, 0.4);
+    box-shadow: none;
 }
 
 .btn-primary:hover {
     background-color: var(--bs-primary);
     border-color: var(--bs-primary);
     filter: brightness(1.1);
-    transform: translateY(-2px);
-    box-shadow: 0 6px 15px rgba(255, 165, 0, 0.5);
+    transform: none;
+    box-shadow: none;
 }
 
 /* Results page styling */
@@ -247,7 +254,6 @@ header .lead {
     padding: 0.75rem 1rem;
     font-family: 'Cinzel', serif;
     color: var(--bs-primary);
-    text-shadow: 0 0 5px var(--bs-primary);
 }
 
 /* House styling */
