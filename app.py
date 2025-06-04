@@ -498,30 +498,19 @@ def calculate_skyfield():
         ayanamsa = get_lahiri_ayanamsa(utc_datetime)
         logging.debug(f"Ayanamsa: {ayanamsa}")
 
-        # Create Skyfield time object
-        t = ts.from_datetime(utc_datetime)
-
-        # Create observer
-        observer = earth + Topos(latitude_degrees=latitude, longitude_degrees=longitude)
-
-        # Calculate ascendant
-        tropical_asc = calculate_ascendant(t, observer)
-        sidereal_asc = (tropical_asc - ayanamsa) % 360
+        jd_ut = julian_day_from_datetime(utc_datetime)
+        sidereal_asc = get_sidereal_ascendant(jd_ut, latitude, longitude)
         ascendant_position = format_position(sidereal_asc)
         logging.debug(f"Ascendant: {ascendant_position['formatted']}")
-
         # Get house system preference (default to whole_sign if not specified)
         house_system = data.get("house_system", "whole_sign")
         # Calculate houses based on selected system
         houses = calculate_houses(ascendant_position, house_system)
 
         # Calculate planetary positions
-        planets = calculate_planet_positions(
-            birth_date, birth_time, longitude, latitude
-        )
-
-        # Determine planet houses using Whole Sign system
-        asc_index = ZODIAC_SIGNS.index(ascendant_position["sign"])
+        utc_date = utc_datetime.strftime("%Y-%m-%d")
+        utc_time = utc_datetime.strftime("%H:%M")
+        planets = calculate_planet_positions(utc_date, utc_time, longitude, latitude)
         for planet in planets:
             sign_idx = ZODIAC_SIGNS.index(planet["sign"])
             planet_house = ((sign_idx - asc_index) % 12) + 1
@@ -603,14 +592,14 @@ def calculate():
         # Convert to UTC
         utc_datetime = local_datetime.astimezone(pytz.UTC)
 
-        # Calculate Julian Day for Swiss Ephemeris
         from utils.swisseph import (
-            calculate_jd_ut,
+            julian_day_from_datetime,
+            get_sidereal_ascendant,
             calculate_planet_position,
             calculate_lunar_nodes,
         )
 
-        jd_ut = calculate_jd_ut(dob_date, dob_time or "12:00")
+        jd_ut = julian_day_from_datetime(utc_datetime)
         logging.debug(f"Julian Day: {jd_ut}")
 
         # Dictionary of planets with their Swiss Ephemeris IDs
@@ -765,220 +754,23 @@ def calculate():
         utc_datetime = local_datetime.astimezone(pytz.UTC)
         logging.debug(f"UTC datetime: {utc_datetime}")
 
-        # Create Skyfield time object
-        t = ts.from_datetime(utc_datetime)
-
-        # Create observer
-        observer = earth + Topos(latitude_degrees=latitude, longitude_degrees=longitude)
+        jd_ut = julian_day_from_datetime(utc_datetime)
+        sidereal_asc = get_sidereal_ascendant(jd_ut, latitude, longitude)
+        ascendant_position = format_position(sidereal_asc)
+        ascendant_position["description"] = get_ascendant_interpretation(ascendant_position["sign"])
+        houses = []
+        asc_index = ZODIAC_SIGNS.index(ascendant_position["sign"])
+        for i in range(12):
+            sign = ZODIAC_SIGNS[(asc_index + i) % 12]
+            house = {"house": i+1, "sign": sign, "degree": 0.0, "formatted": f"{sign} 0°"}
+            house["meaning"] = get_house_meaning(i+1, sign)
+            houses.append(house)
+        house_data = {"ascendant": ascendant_position, "houses": houses}
 
         # Calculate ayanamsa
         ayanamsa = get_lahiri_ayanamsa(utc_datetime)
         logging.debug(f"Ayanamsa: {ayanamsa}")
 
-        # Use Kerykeion for accurate ascendant and house calculations
-        try:
-            logging.debug("About to calculate ascendant using Kerykeion...")
-
-            # Import Kerykeion calculation function
-            from utils.kerykeion_utils import calculate_kerykeion_chart
-
-            # Calculate chart using Kerykeion - BUT ONLY FOR THE ASCENDANT
-            kerykeion_chart = calculate_kerykeion_chart(
-                birth_date=dob_date,
-                birth_time=dob_time,
-                city=city,
-                country=country,
-                latitude=latitude,
-                longitude=longitude,
-            )
-
-            # Extract ONLY the ascendant from Kerykeion
-            ascendant_position = kerykeion_chart["ascendant"]
-
-            # Log the calculation
-            logging.debug(
-                f"Ascendant: {ascendant_position['formatted']} (Kerykeion calculation)"
-            )
-
-            # Add ascendant interpretation
-            ascendant_position["description"] = get_ascendant_interpretation(
-                ascendant_position["sign"]
-            )
-
-            # EXPLICITLY IGNORE THE HOUSES FROM KERYKEION!
-            # DO NOT CREATE houses = kerykeion_chart['houses']
-
-            logging.warning(
-                f"⚠️ COMPLETELY NEW APPROACH - Only using Kerykeion for ascendant, calculating houses directly in app.py"
-            )
-
-            # We will NOT use any external function for house calculation at all
-            # Instead, we'll directly create the houses array right here
-
-            # Standard zodiac signs in order
-            zodiac_signs = [
-                "Aries",
-                "Taurus",
-                "Gemini",
-                "Cancer",
-                "Leo",
-                "Virgo",
-                "Libra",
-                "Scorpio",
-                "Sagittarius",
-                "Capricorn",
-                "Aquarius",
-                "Pisces",
-            ]
-
-            # Get the ascendant sign
-            ascendant_sign = ascendant_position["sign"]
-            logging.warning(
-                f"🔹 DIRECT HOUSE CALCULATION - Ascendant sign: '{ascendant_sign}'"
-            )
-
-            # Make sure it's a valid sign, default to Aries if not
-            if ascendant_sign not in zodiac_signs:
-                logging.error(
-                    f"🔹 DIRECT HOUSE CALCULATION - Invalid ascendant sign: '{ascendant_sign}', defaulting to Aries"
-                )
-                ascendant_sign = "Aries"
-
-            # Find the index of the ascendant sign in the zodiac
-            asc_sign_index = zodiac_signs.index(ascendant_sign)
-            logging.warning(
-                f"🔹 DIRECT HOUSE CALCULATION - Ascendant sign index: {asc_sign_index}"
-            )
-
-            # Create the houses array
-            houses = []
-
-            # Directly build each house
-            for house_num in range(1, 13):
-                # Calculate the sign index for this house
-                house_sign_index = (asc_sign_index + house_num - 1) % 12
-                house_sign = zodiac_signs[house_sign_index]
-
-                # Create the house object
-                house = {"house": house_num, "sign": house_sign, "system": "Whole Sign"}
-                houses.append(house)
-
-            # Log the first house to verify
-            logging.warning(
-                f"🔹 DIRECT HOUSE CALCULATION - First house sign: '{houses[0]['sign']}'"
-            )
-            logging.warning(
-                f"🔹 DIRECT HOUSE CALCULATION - All houses: {[(h['house'], h['sign']) for h in houses]}"
-            )
-
-            # Final verification
-            if houses[0]["sign"] != ascendant_sign:
-                logging.error(
-                    f"🔹 DIRECT HOUSE CALCULATION - CRITICAL ERROR: House 1 sign ({houses[0]['sign']}) doesn't match ascendant ({ascendant_sign})"
-                )
-                # Force correct it
-                houses[0]["sign"] = ascendant_sign
-
-            # Log house data to debug
-            logging.debug(f"HOUSE SYSTEM SELECTED: {house_system}")
-            logging.debug(
-                f"Ascendant SIGN PASSED TO HOUSE CALCULATION: '{ascendant_position['sign']}'"
-            )
-            logging.debug(f"Ascendant FULL DETAILS: {ascendant_position}")
-            logging.debug(f"House 1 sign: {houses[0]['sign']}")
-            logging.debug(f"ALL HOUSES: {houses}")
-
-            # Add meanings to houses
-            for house in houses:
-                house["meaning"] = get_house_meaning(house["house"], house["sign"])
-
-            # NOW create the house_data structure AFTER our direct calculation
-            # This ensures we're using our manually calculated houses
-            house_data = {
-                "ascendant": ascendant_position,
-                "houses": houses,  # Our directly calculated houses, not Kerykeion's
-            }
-
-            logging.warning(
-                f"CREATED house_data with our directly calculated houses. House 1: {houses[0]['sign']}"
-            )
-
-            # Check if we want to replace planet calculations from Kerykeion too
-            # If planets were already calculated correctly, we'll keep them
-            # kerykeion_planets = kerykeion_chart['planets']
-
-        except Exception as asc_error:
-            logging.error(
-                f"DETAILED Ascendant calculation error with Kerykeion: {str(asc_error)}"
-            )
-            logging.error(f"Error type: {type(asc_error).__name__}")
-            logging.error(f"Error traceback: {traceback.format_exc()}")
-
-            # Emergency fallback to a fixed value
-            sidereal_asc = 0.0  # Aries 0°
-            ascendant_position = format_position(sidereal_asc)
-            logging.warning(
-                f"Using emergency fallback ascendant: {ascendant_position['formatted']}"
-            )
-
-            # Add ascendant interpretation
-            ascendant_position["description"] = get_ascendant_interpretation(
-                ascendant_position["sign"]
-            )
-
-            logging.warning(f"🔴 MAIN EMERGENCY FALLBACK - Calculating houses directly")
-
-            # Standard zodiac signs in order
-            zodiac_signs = [
-                "Aries",
-                "Taurus",
-                "Gemini",
-                "Cancer",
-                "Leo",
-                "Virgo",
-                "Libra",
-                "Scorpio",
-                "Sagittarius",
-                "Capricorn",
-                "Aquarius",
-                "Pisces",
-            ]
-
-            # Get the ascendant sign from our emergency fallback position
-            ascendant_sign = ascendant_position["sign"]
-            logging.warning(
-                f"🔴 MAIN EMERGENCY FALLBACK - Using ascendant sign: '{ascendant_sign}'"
-            )
-
-            # Find the index of the ascendant sign in the zodiac
-            asc_sign_index = zodiac_signs.index(ascendant_sign)
-
-            # Create the houses array
-            houses = []
-
-            # Directly build each house
-            for house_num in range(1, 13):
-                # Calculate the sign index for this house
-                house_sign_index = (asc_sign_index + house_num - 1) % 12
-                house_sign = zodiac_signs[house_sign_index]
-
-                # Create the house object
-                house = {
-                    "house": house_num,
-                    "sign": house_sign,
-                    "system": "Whole Sign (Emergency Fallback)",
-                }
-                houses.append(house)
-
-            # Get house meanings
-            house_meanings = get_house_meanings()
-
-            # Add meanings to houses
-            for house in houses:
-                house["meaning"] = get_house_meaning(house["house"], house["sign"])
-
-            # Create the house_data structure that the rest of the code expects
-            house_data = {"ascendant": ascendant_position, "houses": houses}
 
         logging.info(
             f"Successfully calculated houses using Skyfield - Ascendant: {ascendant_position['formatted']}"

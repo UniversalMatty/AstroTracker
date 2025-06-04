@@ -2,6 +2,7 @@
 
 :root {
     --bs-primary: #FFA500;
+    --bs-info: #FFA500;
 }
 
 /* General styling overrides */
@@ -43,6 +44,7 @@ header .lead {
     border-radius: 12px;
     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
     overflow: hidden;
+    border: 1px solid rgba(255, 165, 0, 0.2);
     transition: transform 0.2s, box-shadow 0.2s;
     margin-bottom: 2rem;
     background-color: rgba(33, 37, 41, 0.8);
@@ -55,8 +57,7 @@ header .lead {
 }
 
 .card-header {
-    padding: 1rem 1.5rem;
-    border-bottom: 2px solid rgba(255, 255, 255, 0.05);
+    border-bottom: 2px solid rgba(255, 165, 0, 0.4);
 }
 
 .card-body {
@@ -86,9 +87,9 @@ header .lead {
 }
 
 .form-control:focus {
-    background-color: rgba(59, 130, 246, 0.1);
+    background-color: rgba(255, 165, 0, 0.1);
     border-color: var(--bs-primary);
-    box-shadow: 0 0 0 0.25rem rgba(59, 130, 246, 0.25);
+    box-shadow: 0 0 0 0.25rem rgba(255, 165, 0, 0.25);
 }
 
 .form-label {
@@ -231,6 +232,7 @@ header .lead {
 }
 
 .planet-card .card-header {
+    border-bottom: 2px solid rgba(255, 165, 0, 0.4);
     font-weight: 600;
     font-size: 1.1rem;
     padding: 0.75rem 1rem;
@@ -254,6 +256,7 @@ header .lead {
 }
 
 .house-card .card-header {
+    border-bottom: 2px solid rgba(255, 165, 0, 0.4);
     font-weight: 600;
     font-size: 1.1rem;
     padding: 0.75rem 1rem;
@@ -282,11 +285,11 @@ header .lead {
 .sign-leo { color: #FC9D5D; } /* Bright orange */
 .sign-virgo { color: #8CC152; } /* Lime green */
 .sign-libra { color: #EC87C0; } /* Soft pink */
-.sign-scorpio { color: #AC92EC; } /* Purple */
-.sign-sagittarius { color: #4FC1E9; } /* Sky blue */
+.sign-scorpio { color: #FFA500; } /* Purple */
+.sign-sagittarius { color: #FFA500; } /* Sky blue */
 .sign-capricorn { color: #D770AD; } /* Magenta */
-.sign-aquarius { color: #5D9CEC; } /* Blue */
-.sign-pisces { color: #AC92EC; } /* Lavender */
+.sign-aquarius { color: #FFA500; } /* Blue */
+.sign-pisces { color: #FFA500; } /* Lavender */
 
 /* Footer styling */
 footer {
@@ -318,6 +321,7 @@ footer .text-muted {
     }
     
     .card-header {
+    border-bottom: 2px solid rgba(255, 165, 0, 0.4);
         padding: 0.75rem 1rem;
     }
     

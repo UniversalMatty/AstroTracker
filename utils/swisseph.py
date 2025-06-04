@@ -644,3 +644,21 @@ def get_sign_ruler(sign):
         "Pisces": "Neptune"  # Modern ruler (Jupiter is traditional)
     }
     return rulers.get(sign, "Unknown")
+
+def julian_day_from_datetime(dt_utc):
+    """Return Julian Day (UT) for a timezone-aware UTC datetime."""
+    return swe.julday(
+        dt_utc.year,
+        dt_utc.month,
+        dt_utc.day,
+        dt_utc.hour + dt_utc.minute / 60.0 + dt_utc.second / 3600.0,
+    )
+
+
+def get_sidereal_ascendant(jd_ut, latitude, longitude):
+    """Calculate sidereal ascendant using Lahiri ayanamsa."""
+    swe.set_sid_mode(swe.SIDM_LAHIRI)
+    houses, ascmc = swe.houses(jd_ut, latitude, longitude)
+    tropical_asc = ascmc[0]
+    ayanamsa = swe.get_ayanamsa(jd_ut)
+    return (tropical_asc - ayanamsa) % 360
