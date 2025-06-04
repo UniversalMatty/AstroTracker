@@ -26,12 +26,12 @@ from skyfield.api import load, Topos
 
 from utils.geocoding import get_coordinates
 from utils.astronomy import calculate_planet_positions, get_zodiac_sign
-from utils.astrology import get_nakshatra, get_house_meanings
+from utils.astrology import get_nakshatra
 from utils.planet_descriptions import get_planet_description
 from utils.psych_descriptions import get_planet_sign_description
+from utils.house_descriptions import get_house_sign_description
 from utils.position_interpretations import (
     get_planet_in_sign_interpretation,
-    get_house_meaning,
     get_ascendant_interpretation,
 )
 from utils.utils import get_lahiri_ayanamsa
@@ -519,13 +519,15 @@ def calculate_skyfield():
             planet["interpretation"] = get_planet_in_sign_interpretation(
                 planet["name"], planet["sign"]
             )
-            planet["psychological_description"] = get_planet_sign_description(
+            planet["description"] = get_planet_sign_description(
                 planet["name"], planet["sign"]
             )
+            planet["psychological_description"] = planet["description"]
 
         # Add interpretation to each house
         for h in houses:
-            h["interpretation"] = get_house_meaning(h["house"], h["sign"])
+            h["interpretation"] = get_house_sign_description(h["house"], h["sign"])
+            h["meaning"] = h["interpretation"]
 
         # Create response data
         response_data = {
@@ -735,12 +737,13 @@ def calculate():
         # Add nakshatra information and descriptions to planets
         for planet in planets:
             planet["nakshatra"] = get_nakshatra_from_longitude(planet["longitude"])
-            planet["description"] = get_planet_in_sign_interpretation(
+            planet["interpretation"] = get_planet_in_sign_interpretation(
                 planet["name"], planet["sign"]
             )
-            planet["psychological_description"] = get_planet_sign_description(
+            planet["description"] = get_planet_sign_description(
                 planet["name"], planet["sign"]
             )
+            planet["psychological_description"] = planet["description"]
 
         # Always calculate houses and ascendant using Skyfield for better accuracy
         # Get timezone
@@ -770,7 +773,7 @@ def calculate():
         for i in range(12):
             sign = ZODIAC_SIGNS[(asc_index + i) % 12]
             house = {"house": i+1, "sign": sign, "degree": 0.0, "formatted": f"{sign} 0°"}
-            house["meaning"] = get_house_meaning(i+1, sign)
+            house["meaning"] = get_house_sign_description(i+1, sign)
             houses.append(house)
         house_data = {"ascendant": ascendant_position, "houses": houses}
 
