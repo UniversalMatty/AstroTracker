@@ -28,6 +28,7 @@ from utils.geocoding import get_coordinates
 from utils.astronomy import calculate_planet_positions, get_zodiac_sign
 from utils.astrology import get_nakshatra, get_house_meanings
 from utils.planet_descriptions import get_planet_description
+from utils.psych_descriptions import get_planet_sign_description
 from utils.position_interpretations import (
     get_planet_in_sign_interpretation,
     get_house_meaning,
@@ -518,6 +519,9 @@ def calculate_skyfield():
             planet["interpretation"] = get_planet_in_sign_interpretation(
                 planet["name"], planet["sign"]
             )
+            planet["psychological_description"] = get_planet_sign_description(
+                planet["name"], planet["sign"]
+            )
 
         # Add interpretation to each house
         for h in houses:
@@ -732,6 +736,9 @@ def calculate():
         for planet in planets:
             planet["nakshatra"] = get_nakshatra_from_longitude(planet["longitude"])
             planet["description"] = get_planet_in_sign_interpretation(
+                planet["name"], planet["sign"]
+            )
+            planet["psychological_description"] = get_planet_sign_description(
                 planet["name"], planet["sign"]
             )
 
