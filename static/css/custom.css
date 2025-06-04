@@ -282,6 +282,11 @@ header .lead {
     font-family: 'Cinzel', serif;
 }
 
+/* Style for the "House 1", "House 2" labels */
+.house-number {
+    color: var(--bs-primary);
+}
+
 .house-card:nth-child(1) .card-header { color: hsl(240,60%,70%); }
 .house-card:nth-child(2) .card-header { color: hsl(220,60%,70%); }
 .house-card:nth-child(3) .card-header { color: hsl(200,60%,70%); }
