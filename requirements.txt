@@ -13,3 +13,4 @@ pandas>=2.0.3
 numpy>=1.24.4
 kerykeion>=3.1.1
 flask-weasyprint>=1.1.0
+geopy>=2.3.0
